@@ -69,3 +69,17 @@ substr_rows <- function(df1, df2) {
   
   return(diff)
 }
+
+#' Revert hierarchy of nested lists
+#' 
+#' @return a list of lists
+#' 
+#' @export
+#'
+
+revert_list_str <- function(ls) {
+  # get sub-elements in same order
+  x <- lapply(ls, `[`, names(ls[[1]]))
+  # stack and reslice
+  apply(do.call(rbind, x), 2, as.list) 
+}

@@ -69,7 +69,7 @@ read_metadata <- function(path, repo, sheet = NULL){
     sb_lat <- xml_text(xml_find_first(x, ".//gmd:southBoundLatitude"))
     nb_lat <- xml_text(xml_find_first(x, ".//gmd:northBoundLatitude"))
     
-    data.frame(latitude = c(wb_lon, eb_lon), longitude = c(sb_lat, nb_lat))
+    data.frame(latitude = c(sb_lat, nb_lat), longitude = c(wb_lon, eb_lon))
   })
   
   spat_cov_out <- spat_cov[[1]] %>% mutate_all(as.numeric)

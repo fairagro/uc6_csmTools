@@ -29,14 +29,14 @@ get_years_col <- function(df, start, end){
 #' @export
 #'
 
-get_treatments_col <- function(df, years_col, plots_col){
-  
-  pkey <- get_pkeys(df, alternates = FALSE)
+get_treatments_col <- function(design_tbl, years_col, plots_col){
+
+  pkey <- get_pkeys(design_tbl, alternates = FALSE)
   
   # Unidenified columns
-  cols <- setdiff(names(design), c(pkey, years_col, plots_col))
+  cols <- setdiff(names(design_tbl), c(pkey, years_col, plots_col))
   # Drop plots and keep unique rows
-  df_noplots <- design %>%
+  df_noplots <- design_tbl %>%
     dplyr::select(-all_of(PLOTS_nm)) %>%
     distinct()
   
@@ -44,6 +44,7 @@ get_treatments_col <- function(df, years_col, plots_col){
   trt_col <- NULL
   reps_n <- NULL
   for (i in cols) {
+    #i = cols[3]
     
     reps <- design_noplots %>%
       group_by(.[[i]]) %>% 
@@ -51,10 +52,11 @@ get_treatments_col <- function(df, years_col, plots_col){
       pull(n)
     
     if(length(unique(reps))==1){
-      trt_col <- c(trt_col, i)
-      reps_n <- unique(reps)
+      if(unique(reps) < length(unique(design_tbl[[plots_col]]))){
+        trt_col <- c(trt_col, i)
+        reps_n <- c(reps_n, unique(reps))
+      }
     }
-    
   }
   
   return(list(trt_col, reps_n))
