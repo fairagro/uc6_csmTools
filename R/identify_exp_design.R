@@ -37,7 +37,7 @@ get_treatments_col <- function(design_tbl, years_col, plots_col){
   cols <- setdiff(names(design_tbl), c(pkey, years_col, plots_col))
   # Drop plots and keep unique rows
   df_noplots <- design_tbl %>%
-    dplyr::select(-all_of(PLOTS_nm)) %>%
+    dplyr::select(-all_of(plots_col)) %>%
     distinct()
   
   # Find column with fixed number of rows per group (i.e., number of replicates)

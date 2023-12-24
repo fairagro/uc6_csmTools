@@ -1,7 +1,7 @@
-#' Select DWD weather stations clost to the given coordinates
+#' Select DWD weather stations measuring solar radition closest to the given coordinates
 #' 
-#' Select DWD stations within a given radius around a set of coordinates. Workaround for nearbyStations not functioning
-#' for solar raidation data
+#' Select DWD stations within a given radius around a set of coordinates. Workaround for rdwd::nearbyStations not
+#' functioning for solar raidation data
 #' 
 #' @param lat a numeric depicting the latitude (y component) of the target location [degrees N/S, range 47:55]
 #' @param lon a numeric depicting the longitude (x component) of the target location [degrees N/S, range 47:55]
@@ -11,8 +11,8 @@
 #' @return a data frame containing information on weather stations that best  meet the specified location, date range,
 #' variables, and temporal resolution parameters
 #' 
-#' @importFrom rdwd nearbyStations selectDWD dataDWD
-#' @importFrom dplyr filter
+#' @importFrom rdwd nearbyStations selectDWD dataDWD metaInfo
+#' @importFrom dplyr filter arrange distinct left_join mutate
 #' @importFrom spsUtil quiet
 #' @importFrom OSMscale earthDist
 #' 
@@ -20,10 +20,6 @@
 #'
 
 nearbyStations_solar <- function(lat, lon, res, max_radius = 50){  ##inherit
-  
-  #lat = lat
-  #lon = lon
-  #res <- params_solar[["res"]][[1]]
   
   data_ls <- selectDWD(var = "solar", res = c("daily","hourly"), expand = TRUE)
   
@@ -96,8 +92,6 @@ nearbyStations_solar <- function(lat, lon, res, max_radius = 50){  ##inherit
 # Get station data for each year based on the set quality parameters
 find_stations <- function(lat, lon, min_date, params){
   
-  #min_date <- "1999-01-01"
-  
   # Set period
   per <- if(min_date <= Sys.Date() %m-% months(18)) { "historical" } else { "recent" }
   
@@ -168,6 +162,8 @@ find_stations <- function(lat, lon, min_date, params){
 #' @return a list of named data frames, each containing weather data for one of the target variable(s)
 #' 
 #' @importFrom rdwd selectDWD dataDWD
+#' @importFrom dplyr filter arrange
+#' @importFrom lubridate as_date year
 #' 
 #' @export
 #'
@@ -178,17 +174,10 @@ download_dwd <- function(
     stations,
     dir = tempdir()){
   
-  #vars = names(params)
-  #year = "1972"
-  #stations
-  #dir <- tempdir()
-  
   from_date <- paste0(year, "-01-01")
   to_date <- paste0(year, "-12-31")
   
   dwd_data <- lapply(vars, function(x){
-    
-    #x <- "dewpoint"
 
     # Sort the stations by distance from the field, from lower to higher
     station <- stations %>%
@@ -258,11 +247,12 @@ download_dwd <- function(
 #' @return ###
 #' 
 #' @importFrom leroy-bml/csmTools R/etl_utils
+#' @importFrom lubridate is.POSIXct is.POSIXlt is.POSIXt as_date
 #' 
 #' @export
 #'
 
-format_wth <- function(data, lookup) { ##!! replaces fmt_dssat
+format_wth <- function(data, lookup) {
   
   # Find date column
   data <- lapply(data, function(x){
@@ -283,7 +273,6 @@ format_wth <- function(data, lookup) { ##!! replaces fmt_dssat
   out_fmt <- as.data.frame(matrix(ncol = nrow(lookup_sub), nrow = nrow(data)))
   names(out_fmt) <- lookup_sub$std_var
   
-  #
   out_fmt[ncol(out_fmt)+1] <- date
 
   for (i in 1:nrow(lookup_sub)) {
@@ -347,7 +336,6 @@ format_wth <- function(data, lookup) { ##!! replaces fmt_dssat
 #'
 
 impute_weather <- function(df, na.rm = TRUE, rule = 2) {
-  #df <- dwd_out$Y1977
   
   na_cols <- colSums(is.na(df)) > 0
   df_na <- df[, na_cols, drop = FALSE]
@@ -383,7 +371,7 @@ impute_weather <- function(df, na.rm = TRUE, rule = 2) {
 #' @return a list of dataframes containing daily weather for the requested location, years and variables
 #' Each data frame contains one full year of data.
 #' 
-#' @importFrom dplyr distinct mutate
+#' @importFrom dplyr distinct mutate select
 #' @importFrom tibble rownames_to_column
 #' 
 #' @export
@@ -392,7 +380,7 @@ impute_weather <- function(df, na.rm = TRUE, rule = 2) {
 get_weather <- function(
     years, lon, lat,
     src = c("dwd","nasa_power"),  # may implement other sources in the future
-    map_to = c("icasa","dssat"),
+    map_to = c("icasa","dssat"),  # add option for not mapping to any standard
     vars = c("air_temperature", "precipitation", "solar_radiation", "dewpoint", "relative_humidity", "wind_speed"),
     res = list("hourly", c("daily", "hourly"), c("daily", "hourly"), "hourly", "hourly", "hourly") ,
     # max radius in km; defined separately for each variable as quality requirements differ
@@ -455,6 +443,8 @@ get_weather <- function(
   
   # Format and map the data -------------------------------------------------
   
+  # TODO: link metadata attributes from df to common columns prior to merge (currently they get lost)
+  
   # Drop variables with no data (empty data frames)
   dwd_ipt <- lapply(dwd_raw, function(df) Filter(function(x) nrow(x) > 0, df))##
   
@@ -493,7 +483,11 @@ get_weather <- function(
   
   dwd_out <- lapply(dwd_out, function(df){
     if (anyNA(df)) {
+      
+      col_order <- colnames(df)
+      
       df <- impute_weather(df, na.rm = TRUE, rule = 2)
+      df <- df %>% select(all_of(col_order))
     }
     return(df)
   })

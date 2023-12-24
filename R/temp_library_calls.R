@@ -3,7 +3,7 @@
 
 
 library(units)
-library(purrr)
+#library(purrr)
 library(dplyr)
 library(tidyr)
 library(tidyverse)
@@ -16,6 +16,7 @@ library(zip)
 library(jsonlite)
 library(OSMscale)
 library(spsUtil)
+library(rlang)
 
 
 
