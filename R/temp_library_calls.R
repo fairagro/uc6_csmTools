@@ -3,7 +3,7 @@
 
 
 library(units)
-#library(purrr)
+library(purrr)
 library(dplyr)
 library(tidyr)
 library(tidyverse)

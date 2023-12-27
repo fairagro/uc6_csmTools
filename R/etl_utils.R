@@ -78,8 +78,26 @@ substr_rows <- function(df1, df2) {
 #'
 
 revert_list_str <- function(ls) {
-  # get sub-elements in same order
   x <- lapply(ls, `[`, names(ls[[1]]))
-  # stack and reslice
   apply(do.call(rbind, x), 2, as.list) 
+}
+
+#' Append data frame attributes to the first non-join columns so that they are not lost at joining
+#' 
+#' @return a list containing the two data frames with the attributes appended to the first non-join columns
+#' 
+#' @export
+#'
+
+attr_to_column <- function(df1, df2, attr_name){
+  
+  col1 <- setdiff(names(df1), names(df2))[1]
+  attr(df1[[col1]], attr_name) <- attr(df1, attr_name)
+  attr(df1, attr_name) <- NULL
+  
+  col2 <- setdiff(names(df2), names(df1))[1]
+  attr(df2[[col2]], attr_name) <- attr(df2, attr_name)
+  attr(df2, attr_name) <- NULL
+  
+  return(list(df1, df2))
 }

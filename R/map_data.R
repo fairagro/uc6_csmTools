@@ -1,25 +1,3 @@
-###---- TEMP -----
-map_tmp <- data.frame(
-  column_header = unique(
-    unlist(lapply(BNR_full, function(df) colnames(df)), use.names = FALSE)
-  )
-)
-
-#joins <- read.delim("clipboard")
-
-map_tmp_2 <- map_tmp %>%
-  left_join(joins, by = "column_header")
-
-map_tmp_2 <- map_tmp_2 %>%
-  rename(raw_var = column_header,  ##!!
-         std_var = std_header,
-         raw_unit = column_unit) %>%
-  dplyr::select(raw_var, raw_unit, std_var, std_unit, code_mappings)
-
-# Drop NAs
-map_tmp_2 <- mutate_all(map_tmp_2, ~ifelse(is.na(.x), "", .x))
-  
-         
 #' Convert a mapping code list stored in a data frame as a string into a lookup table
 #' 
 #' The string format is analogous to the code_mapping field in standard ARDN SC2 json files around which the standard
@@ -61,22 +39,23 @@ make_code_lookup <- function(str){
 
 map_codes <- function(df, map){
   
-  map <- map[map$std_var %in% colnames(df),]
+  map <- map[map$std_header %in% colnames(df),]
   
   for (i in 1:nrow(map)){
-    
+  
     if (is.na(map$std_unit[i]) | map$std_unit[i] == "") {
       next
     }
     
     if (map$std_unit[i] == "code") {
       
-      header <- map$std_var[i]
+      header <- map$std_header[i]
       
       mappings <- map$code_mappings[i]
       lookup <- make_code_lookup(mappings)
       var <- df[[header]]
       
+      print(header)
       df[[header]] <- recode_factor(var, !!!setNames(as.list(lookup$target), lookup$source))
     }
   }
@@ -117,17 +96,19 @@ convert_unit <- function(x, u1, u2){
 #' @export
 #'
 
-map_data <- function(df, map){
+map_data <- function(df, tbl_name, map){
+  
+  map <- map[map$table_name == tbl_name,]
   
   # Map headers
   for (i in seq_along(colnames(df))) {
     for (j in 1:nrow(map)){
       
-      if (colnames(df)[i] == map$raw_var[j]){
-        if (is.na(map$raw_var[j]) | map$std_var[j] == "") {
+      if (colnames(df)[i] == map$column_header[j]){
+        if (is.na(map$column_header[j]) | map$std_header[j] == "") {
           next
         }
-        colnames(df)[i] <- map$std_var[j]
+        colnames(df)[i] <- map$std_header[j]
       }
     }
   }
@@ -136,15 +117,20 @@ map_data <- function(df, map){
   df <- map_codes(df, map)
   
   # Convert units
-  
-  ## if != & is.numeric
-  ##
-  #convert_unit(0.6, unit1, unit2)
+  for (i in seq_along(colnames(df))) {
+    for (j in 1:nrow(map)){
+      
+      if (colnames(df)[i] == map$std_header[j]){
+        if (is.na(map$std_header[j]) |
+            map$std_unit[j] %in% c("","date","code","text","yyyy")) {
+          next
+        }
+        df[[i]] <- convert_unit(df[[i]], map$column_unit[j], map$std_unit[j])
+      }
+    }
+  }
   
   return(df)
 }
 
-
-### example
-tmp <- map_data(BNR_full$EXPERIMENTS, map_tmp_2)
 

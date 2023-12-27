@@ -199,13 +199,17 @@ download_dwd <- function(
                          var = station[i, ]$var)
         data <- dataDWD(url, read = TRUE, dir = dir, quiet = TRUE)
         
-        # Append station metadata for later reuse 
-        attr(data, "var") <- x
-        attr(data, "res") <- station[i, ]$res
-        attr(data, "wst_id") <- paste0("DWD", station[i, ]$Stations_id)
-        attr(data, "wst_name") <- station[i, ]$Stationsname
-        attr(data, "wst_xy") <- c(station[i, ]$geoBreite, station[i, ]$geoBreite)
-        attr(data, "dist") <- station[i, ]$dist
+        # Append station metadata for later reuse
+        metadata <- list(var = x,
+                         res = station[i, ]$res,
+                         wst_id = paste0("DWD", station[i, ]$Stations_id),
+                         wst_name = station[i, ]$Stationsname,
+                         wst_lat = station[i, ]$geoBreite,
+                         wst_lon = station[i, ]$geoLaenge,
+                         wst_elev = station[i, ]$Stationshoehe,
+                         dist = station[i, ]$dist)
+        
+        attr(data, "metadata") <- metadata
         
         # Break the loop if data is available for the target year
         # This check is necessary as some stations have significant time gaps than are not reported in stations metadata
@@ -252,7 +256,7 @@ download_dwd <- function(
 #' @export
 #'
 
-format_wth <- function(data, lookup) {
+format_weather <- function(data, lookup) {
   
   # Find date column
   data <- lapply(data, function(x){
@@ -389,6 +393,7 @@ get_weather <- function(
   
   # Define parameters -------------------------------------------------------
   
+  #years <- ifelse(is.numeric(years), as.character(years), years)
   start_dates <- sapply(years, function(x) paste0(x, "-01-01"))
   
   vars_ipt <- lapply(vars, function(x) {
@@ -441,9 +446,25 @@ get_weather <- function(
     names(dwd_raw) <- paste0("Y", years)
   }
   
-  # Format and map the data -------------------------------------------------
+  # Extract metadata in a single data frame
+  #metadata <- as.data.frame(
+  #    t(vapply(dwd_raw, function(df) attr(df, "metadata"),
+  #             FUN.VALUE = vector(mode = "list", length = 8))))  # 8 is the number of metadata elements
+  metadata <- lapply(dwd_raw, function(ls){
+    nest_df <- as.data.frame(
+      t(sapply(ls, function(df){
+        if(is.null(attr(df, "metadata"))){
+          return(rep(NA, 8))
+        } else {
+          return(attr(df, "metadata"))
+        }
+      }))
+    )
+    df <- unnest(nest_df, cols = colnames(nest_df), keep_empty = TRUE) %>% distinct()
+    df <- df %>% drop_na()
+  })
   
-  # TODO: link metadata attributes from df to common columns prior to merge (currently they get lost)
+  # Format and map the data -------------------------------------------------
   
   # Drop variables with no data (empty data frames)
   dwd_ipt <- lapply(dwd_raw, function(df) Filter(function(x) nrow(x) > 0, df))##
@@ -471,7 +492,7 @@ get_weather <- function(
   })
   
   dwd_trans <- lapply(dwd_ipt, function(ls){
-    lapply(ls, function(df) data <- format_wth(df, lookup = lookup))
+    lapply(ls, function(df) data <- format_weather(df, lookup = lookup))
   })
   
   dwd_out <- lapply(dwd_trans, function(ls){
@@ -492,5 +513,22 @@ get_weather <- function(
     return(df)
   })
   
-  return(dwd_out)
+  # Calculate summary data for weather data header
+  TAV <- lapply(dwd_out, function(df){
+    df %>% summarise(TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>% pull(TAV)
+  })
+  metadata <- map2(metadata, TAV, ~cbind(.x, TAV = .y))
+  
+  AMP <- lapply(dwd_out, function(df){
+    df %>%
+      mutate(mo = month(W_DATE)) %>%
+      group_by(mo) %>%
+      summarize(mo_TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
+      summarize(AMP = (max(mo_TAV)-min(mo_TAV))/2) %>%
+      pull(AMP)
+  })
+  metadata <- map2(metadata, AMP, ~cbind(.x, AMP = .y))
+
+  
+  return(list(data = dwd_out, metadata = metadata))
 }

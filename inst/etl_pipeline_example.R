@@ -14,15 +14,23 @@
 
 # ==== EXPERIMENTS table --------------------------------------------------
 
-EXPERIMENTS <- EXPERIMENTS %>%
+EXPERIMENTS <- DATA_out$EXPERIMENTS %>%##!!
   mutate(SOIL_ID = "IB00000001",  # Currently generic soil is used
-         WEATHER_ID = "DWMB") %>%  # Institute + Site: DWD, Muenchenberg
+         WEATHER_ID = "TUMB") %>%  # Institute + Site: TU Munich, Muenchenberg
+  # Add previous year's crop for initial conditions
+  arrange(YEARS_nm) %>%
+  mutate(ICPCR = lag(KULTUR.Kultur_Englisch, default = NA),
+         WEATHER_ID = paste0(WEATHER_ID,
+                             substr(get(YEARS_nm), nchar(get(YEARS_nm))-2+1, nchar(get(YEARS_nm))),
+                             "01")) %>%
+  # Calculate mean height
+  mutate(FLELE = (PARZELLE.Hoehenlage_Min+PARZELLE.Hoehenlage_Max)/2) %>%
   relocate(SOIL_ID, WEATHER_ID, .after = NOTES)
 
 
 # ==== HARVEST table ------------------------------------------------------
 
-HARVEST <- OBSERVED$Time_series %>%
+HARVEST <- DATA_out$Time_series %>%
   # Drop yield variables (not management data)
   select(all_of(YEARS_nm), TRTNO, starts_with(c("ERNTE","TECHNIK"))) %>%
   distinct() %>%
@@ -41,7 +49,7 @@ HARVEST <- OBSERVED$Time_series %>%
 # ==== FERTILIZERS table --------------------------------------------------
 
 # FERTILIZERS and ORGANIC_MATERIALS tables
-FERTILIZERS_join <- MANAGEMENT$DUENGUNG %>%
+FERTILIZERS_join <- DATA_out$DUENGUNG %>%
   # Separate inorganic and organic fertilizers
   filter(DUENGUNG.Mineralisch == 1) %>%
   separate(DU_ID, into = c("OM_ID", "FE_ID"), remove = FALSE, sep = "_") %>%
@@ -64,7 +72,7 @@ FERTILIZERS <- FERTILIZERS_join %>%
 #' application. For now we just consider the OM only on the year when it is applied, which will lead to innacurate model
 #' predictions in the years between applications
 
-ORGANIC_MATERIALS_join <- MANAGEMENT$DUENGUNG %>%
+ORGANIC_MATERIALS_join <- DATA_out$DUENGUNG %>%
   # Separate inorganic and organic fertilizers
   filter(DUENGUNG.Organisch == 1) %>%
   separate(DU_ID, into = c("OM_ID", "FE_ID"), remove = FALSE, sep = "_") %>%
@@ -82,8 +90,8 @@ ORGANIC_MATERIALS <- ORGANIC_MATERIALS_join %>%
 
 # ==== CULTIVARS table ----------------------------------------------------
 
-CULTIVARS <- OBSERVED$Time_series %>% ##!! TODO: Retrieve which one contains ERNTE 
-  select(YEARS_nm, TRTNO, starts_with("SORTE")) %>% ## TODO: not only update ID by year but also by crop
+CULTIVARS <- DATA_out$Time_series %>% ##!! TODO: Retrieve which one contains ERNTE 
+  select(all_of(YEARS_nm), TRTNO, starts_with("SORTE")) %>% ## TODO: not only update ID by year but also by crop
   distinct() %>%
   # Generate cultivar ID
   group_by_at(YEARS_nm) %>%
@@ -93,8 +101,16 @@ CULTIVARS <- OBSERVED$Time_series %>% ##!! TODO: Retrieve which one contains ERN
 
 # ==== PLANTINGS table ----------------------------------------------------
 
-PLANTINGS <- MANAGEMENT$AUSSAAT %>%
-  select(YEARS_nm, TRTNO, starts_with("SORTE"))
+# AUSSAAT.Keimfaehige_Koerner has variable unites depending on crop
+POT_years <- unique(EXPERIMENTS[which(EXPERIMENTS$KULTUR.Kultur_Englisch == "Potato"), YEARS_nm])
+
+PLANTINGS <- DATA_out$AUSSAAT %>%
+  select(-starts_with("SORTE")) %>%
+  mutate(AUSSAAT.Keimfaehige_Koerner = ifelse(get(YEARS_nm) %in% POT_years,
+                                              AUSSAAT.Keimfaehige_Koerner * 0.0001, AUSSAAT.Keimfaehige_Koerner),
+         PLMA = "S",
+         PLMS = "R")
+  
 
 
 # ==== TREATMENTS matrix --------------------------------------------------
@@ -114,6 +130,9 @@ TREATMENTS <- DATA_out$TREATMENTS %>%
             by = c("DU_ID", YEARS_nm)) %>%
   mutate(across(where(is.numeric), ~ifelse(is.na(.x), 0, .x))) %>%
   dplyr::select(-DU_ID) %>%
+  # Add treatment name (concatenate both factors)
+  mutate(TRT_NAME = paste(FAKTOR1_STUFE.Beschreibung, FAKTOR2_STUFE.Beschreibung, sep = " | ")) %>%
+  relocate(TRT_NAME, .after = all_of(YEARS_nm)) %>%
   distinct()
 
 
@@ -149,13 +168,26 @@ BNR_full <- list(EXPERIMENTS = EXPERIMENTS,
                  ORGANIC_MATERIALS = ORGANIC_MATERIALS, 
                  IRRIGATION = MANAGEMENT$BEREGNUNG,
                  CHEMICALS = MANAGEMENT$PFLANZENSCHUTZ,
+                 HARVEST = HARVEST,
                  OBSERVED_Summary = DATA_out$OBSERVED_Summary,
                  OBSERVED_TimeSeries = OBSERVED_TimeSeries)
+
+# Load pre-made map to ICASA
+map_seehausen_icasa <- read.csv2("./inst/extdata/lte_seehausen_ICASA_map.csv",
+                                 fileEncoding = "latin1")  # latin1 encoding essential for german characters
+map_seehausen_icasa <- mutate_all(map_seehausen_icasa, ~ifelse(is.na(.x), "", .x))
+# TODO: OBSERVED_Summary: Phenology not in map
+
+# Apply mappings (currently, only exaxt matches headers, codes and unit conversions)
+BNR_mapped <- BNR_full
+for (i in seq_along(names(BNR_full))) {
+  BNR_mapped[[i]] <- map_data(df = BNR_full[[i]], tbl_name = names(BNR_full)[i], map = map_seehausen_icasa)
+}
 
 
 # Soil and weather data retrieval and mapping -----------------------
 
-WEATHER <- get_weather(
+WEATHER  <- get_weather(
   lat = unique(EXPERIMENTS$FL_LAT),
   lon = unique(EXPERIMENTS$FL_LON),
   years = sort(unique(EXPERIMENTS[[YEARS_nm]])),
@@ -166,13 +198,39 @@ WEATHER <- get_weather(
   max_radius = c(50, 10, 50, 20, 20, 20)
 )
 
+#WEATHER
 # This might take 5-10 minutes to run
 # rdwd downloads DWD data files into tempdir() before they are loaded into the environment
 # You can clear tempdir() with the following function:
 # unlink(tempdir(), recursive = TRUE)
+
+
+# TODO: implement metadata mapping inside get_weather() function
+WEATHER_header <- lapply(WEATHER$metadata, function(df){
+  if (length(unique(df$wst_id)) == 1) {
+    data.frame(INSI = "TUMB",
+               LAT = df$wst_lat[1],
+               LONG = df$wst_lon[1],
+               ELEV = df$wst_elev[1],
+               TAV = df$TAV[1],
+               AMP = df$AMP[1],
+               REFHT = 2, WNDHT = 2)  # so far not extractable for DWD metadata
+  } else {
+    data.frame(INSI = "TUMB",
+               LAT = mean(df$wst_lat),
+               LONG = mean(df$wst_lon),
+               ELEV = mean(df$wst_elev),  # TODO: add note that data is drawn from multiple stations
+               TAV = df$TAV[1],
+               AMP = df$AMP[1],
+               REFHT = 2, WNDHT = 2)  # so far not extractable for DWD metadata
+  }
+})
 
 #SOIL <- funsoil()
 
 
 # File output -------------------------------------------------------
 
+# Filter
+# Save file by year
+# vMapper
