@@ -17,6 +17,7 @@ library(jsonlite)
 library(OSMscale)
 library(spsUtil)
 library(rlang)
+library(cropCalendars)  # Estimate phenology
 
 
 
@@ -58,19 +59,19 @@ load(file = "./data/wth_data_maps.Rda")
 # )
 # 
 # dwd_dssat <- data.frame(
-#   std_var = c("DATE","SRAD","SRAD","SRAD","TMAX","TMIN","RAIN","RAIN","DEWP","WIND","PAR","EVAP","RHUM"),
-#   repo_var = c("MESS_DATUM","FG","FG_LBERG","FG_STRAHL","TT_TU","TT_TU","R1","RS","TT","F",NA,NA,"RF_STD"), #WIND TO SOLVE
-#   repo_var_res = c("","hourly","hourly","daily","hourly","hourly","hourly","daily","hourly","hourly",NA,NA,"hourly"),
-#   agg_fun = c("identity","sum","sum","identity","max","min","sum","identity","mean","mean",NA,NA,"mean"),
-#   conv_fct = c(NA,0.01,0.01,0.01,1,1,1,1,1,60*60*24/1000,NA,NA,1)
+#   std_var = c("DATE","SRAD","SRAD","SRAD","TMAX","TMIN","TMEAN","RAIN","RAIN","DEWP","WIND","PAR","EVAP","RHUM"),
+#   repo_var = c("MESS_DATUM","FG","FG_LBERG","FG_STRAHL","TT_TU","TT_TU","TT_TU","R1","RS","TT","F",NA,NA,"RF_STD"), #WIND TO SOLVE
+#   repo_var_res = c("","hourly","hourly","daily","hourly","hourly","hourly","hourly","daily","hourly","hourly",NA,NA,"hourly"),
+#   agg_fun = c("identity","sum","sum","identity","max","min","mean","sum","identity","mean","mean",NA,NA,"mean"),
+#   conv_fct = c(NA,0.01,0.01,0.01,1,1,1,1,1,1,60*60*24/1000,NA,NA,1)
 # )
 # 
 # dwd_icasa <- data.frame(
-#   std_var = c("W_DATE","SRAD","SRAD","SRAD","TMAX","TMIN","RAIN","RAIN","TDEW","WIND","PARD","EVAP","RHAVD"),
-#   repo_var = c("MESS_DATUM","FG","FG_LBERG","FG_STRAHL","TT_TU","TT_TU","R1","RS","TT","F",NA,NA,"RF_STD"), #WIND TO SOLVE
-#   repo_var_res = c("","hourly","hourly","daily","hourly","hourly","hourly","daily","hourly","hourly",NA,NA,"hourly"),
-#   agg_fun = c("identity","sum","sum","identity","max","min","sum","identity","mean","mean",NA,NA,"mean"),
-#   conv_fct = c(NA,0.01,0.01,0.01,1,1,1,1,1,60*60*24/1000,NA,NA,1)
+#   std_var = c("W_DATE","SRAD","SRAD","SRAD","TMAX","TMIN","TMEAN","RAIN","RAIN","TDEW","WIND","PARD","EVAP","RHAVD"),
+#   repo_var = c("MESS_DATUM","FG","FG_LBERG","FG_STRAHL","TT_TU","TT_TU","TT_TU","R1","RS","TT","F",NA,NA,"RF_STD"), #WIND TO SOLVE
+#   repo_var_res = c("","hourly","hourly","daily","hourly","hourly","hourly","hourly","daily","hourly","hourly",NA,NA,"hourly"),
+#   agg_fun = c("identity","sum","sum","identity","max","min","mean","sum","identity","mean","mean",NA,NA,"mean"),
+#   conv_fct = c(NA,0.01,0.01,0.01,1,1,1,1,1,1,60*60*24/1000,NA,NA,1)
 # )
 # 
 # save(nasa_dssat, nasa_icasa, dwd_dssat, dwd_icasa, file = "./data/wth_data_maps.Rda")

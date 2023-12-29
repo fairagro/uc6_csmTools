@@ -100,4 +100,4 @@ attr_to_column <- function(df1, df2, attr_name){
   attr(df2, attr_name) <- NULL
   
   return(list(df1, df2))
-}
+}  # Not used, could be deleted?

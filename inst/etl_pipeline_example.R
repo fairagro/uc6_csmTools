@@ -30,16 +30,18 @@ EXPERIMENTS <- DATA_out$EXPERIMENTS %>%##!!
 
 # ==== HARVEST table ------------------------------------------------------
 
-HARVEST <- DATA_out$Time_series %>%
+HARVEST <- DATA_out$OBSERVED_TimeSeries %>%
   # Drop yield variables (not management data)
   select(all_of(YEARS_nm), TRTNO, starts_with(c("ERNTE","TECHNIK"))) %>%
-  distinct() %>%
   # Rank different date within year and treatment in decreasing order to separate i-s and e-o-s harvests
   group_by_at(c(YEARS_nm, "TRTNO")) %>%
   mutate(HA_type = ifelse(
     dense_rank(desc(as_date(ERNTE.Termin))) > 1, "is", "eos")) %>% ungroup() %>%
   # Keep only latest harvest date ("actual harvest")
   filter(HA_type == "eos") %>%
+  # Drop Harvest sorting variable and keep unique records
+  select(-c(TRTNO, HA_type)) %>%
+  distinct() %>%
   # Generate harvest ID
   group_by_at(YEARS_nm) %>%
   mutate(HA_ID = cur_group_id()) %>% ungroup() %>%
@@ -78,6 +80,11 @@ ORGANIC_MATERIALS_join <- DATA_out$DUENGUNG %>%
   separate(DU_ID, into = c("OM_ID", "FE_ID"), remove = FALSE, sep = "_") %>%
   # Update the ID accordingly
   group_by_at(c(YEARS_nm, "OM_ID")) %>% mutate(OM_ID = cur_group_id()) %>% ungroup() %>%
+  # Calculate the amount of OM applied in each year based on average nitrogen concentration
+  # source: https://www.epa.gov/nutrientpollution/estimated-animal-agriculture-nitrogen-and-phosphorus-manure
+  # NB: this is a US estimate, we might need to add a routine to estimate based on experiment metadata
+  mutate(OMNPC = 3,  # OM nitrogen concentration (3%)
+         OMAMT = DUENGUNG.Stickstoff_org * OMNPC * 0.01)
   # Drop unused columns
   select(c(where(~!all(is.na(.))), -DUENGUNG.Mineralisch, -DUENGUNG.Organisch, -DUENGUNG.Gesamt_Stickstoff, -FE_ID)) %>%
   mutate(across(where(is.numeric), ~ifelse(is.na(.x), 0, .x)))
@@ -90,8 +97,8 @@ ORGANIC_MATERIALS <- ORGANIC_MATERIALS_join %>%
 
 # ==== CULTIVARS table ----------------------------------------------------
 
-CULTIVARS <- DATA_out$Time_series %>% ##!! TODO: Retrieve which one contains ERNTE 
-  select(all_of(YEARS_nm), TRTNO, starts_with("SORTE")) %>% ## TODO: not only update ID by year but also by crop
+CULTIVARS <- DATA_out$OBSERVED_TimeSeries %>% ##!! TODO: Retrieve which one contains ERNTE 
+  select(all_of(YEARS_nm), starts_with("SORTE")) %>% ## TODO: not only update ID by year but also by crop
   distinct() %>%
   # Generate cultivar ID
   group_by_at(YEARS_nm) %>%
@@ -117,11 +124,11 @@ PLANTINGS <- DATA_out$AUSSAAT %>%
 
 TREATMENTS <- DATA_out$TREATMENTS %>%
   left_join(HARVEST %>%
-              dplyr::select(HA_ID, TRTNO, all_of(YEARS_nm)),
-            by = c("TRTNO", YEARS_nm)) %>%
+              dplyr::select(HA_ID, all_of(YEARS_nm)),
+            by = YEARS_nm) %>%
   left_join(CULTIVARS %>%
-              dplyr::select(CU_ID, TRTNO, all_of(YEARS_nm)),
-            by = c("TRTNO", YEARS_nm)) %>%
+              dplyr::select(CU_ID, all_of(YEARS_nm)),
+            by = YEARS_nm) %>%
   left_join(FERTILIZERS_join %>%
               dplyr::select(FE_ID, DU_ID, all_of(YEARS_nm)),
             by = c("DU_ID", YEARS_nm))  %>%
@@ -161,14 +168,14 @@ OBSERVED_TimeSeries <- DATA_out$OBSERVED_TimeSeries %>%
 
 BNR_full <- list(EXPERIMENTS = EXPERIMENTS,
                  TREATMENTS = TREATMENTS,
-                 TILLAGE = MANAGEMENT$BODENBEARBEITUNG,
-                 PLANTINGS = PLANTINGS,
-                 CULTIVARS = CULTIVARS,
-                 FERTILIZERS = FERTILIZERS,
-                 ORGANIC_MATERIALS = ORGANIC_MATERIALS, 
-                 IRRIGATION = MANAGEMENT$BEREGNUNG,
-                 CHEMICALS = MANAGEMENT$PFLANZENSCHUTZ,
-                 HARVEST = HARVEST,
+                 MANAGEMENT_Tillage = MANAGEMENT$BODENBEARBEITUNG,
+                 MANAGEMENT_Plantings = PLANTINGS,
+                 MANAGEMENT_Cultivars = CULTIVARS,
+                 MANAGEMENT_Fertilizers = FERTILIZERS,
+                 MANAGEMENT_OrganicMaterials = ORGANIC_MATERIALS, 
+                 MANAGEMENT_Irrigation = MANAGEMENT$BEREGNUNG,
+                 MANAGEMENT_Chemicals = MANAGEMENT$PFLANZENSCHUTZ,
+                 MANAGEMENT_Harvest = HARVEST,
                  OBSERVED_Summary = DATA_out$OBSERVED_Summary,
                  OBSERVED_TimeSeries = OBSERVED_TimeSeries)
 
@@ -187,28 +194,31 @@ for (i in seq_along(names(BNR_full))) {
 
 # Soil and weather data retrieval and mapping -----------------------
 
-WEATHER  <- get_weather(
+WEATHER_raw  <- get_weather(
   lat = unique(EXPERIMENTS$FL_LAT),
   lon = unique(EXPERIMENTS$FL_LON),
-  years = sort(unique(EXPERIMENTS[[YEARS_nm]])),
+  years = sort(unique(EXPERIMENTS[[YEARS_nm]])), #!!
   src = "dwd",
   map_to = "icasa",
   vars = c("air_temperature", "precipitation", "solar_radiation", "dewpoint", "relative_humidity", "wind_speed"),
   res = list("hourly", c("daily", "hourly"), c("daily", "hourly"), "hourly", "hourly", "hourly") ,
   max_radius = c(50, 10, 50, 20, 20, 20)
 )
+#' This might take 5-10 minutes to run
+#' rdwd downloads DWD data files into tempdir() before they are loaded into the environment
+#' You can clear tempdir() with the following function:
+#' unlink(tempdir(), recursive = TRUE)
 
-#WEATHER
-# This might take 5-10 minutes to run
-# rdwd downloads DWD data files into tempdir() before they are loaded into the environment
-# You can clear tempdir() with the following function:
-# unlink(tempdir(), recursive = TRUE)
-
+WEATHER <- WEATHER_raw$data
 
 # TODO: implement metadata mapping inside get_weather() function
-WEATHER_header <- lapply(WEATHER$metadata, function(df){
+WEATHER_header <- lapply(names(WEATHER_raw$metadata), function(df_name){
+  
+  df <- WEATHER_raw$metadata[[df_name]]
+  
   if (length(unique(df$wst_id)) == 1) {
-    data.frame(INSI = "TUMB",
+    data.frame(Year = gsub("Y", "", df_name),
+               INSI = "TUMB",
                LAT = df$wst_lat[1],
                LONG = df$wst_lon[1],
                ELEV = df$wst_elev[1],
@@ -216,7 +226,8 @@ WEATHER_header <- lapply(WEATHER$metadata, function(df){
                AMP = df$AMP[1],
                REFHT = 2, WNDHT = 2)  # so far not extractable for DWD metadata
   } else {
-    data.frame(INSI = "TUMB",
+    data.frame(Year = gsub("Y", "", df_name),
+               INSI = "TUMB",
                LAT = mean(df$wst_lat),
                LONG = mean(df$wst_lon),
                ELEV = mean(df$wst_elev),  # TODO: add note that data is drawn from multiple stations
@@ -224,13 +235,113 @@ WEATHER_header <- lapply(WEATHER$metadata, function(df){
                AMP = df$AMP[1],
                REFHT = 2, WNDHT = 2)  # so far not extractable for DWD metadata
   }
-})
+}) %>%
+  do.call(rbind, .)
+
+BNR_mapped$WEATHER <- WEATHER  # TODO: ?integrate weather mapping with other data?
+BNR_mapped$WEATHER_header <- WEATHER_header
+#SOIL
+#SOIL header
 
 #SOIL <- funsoil()
+
+# Estimate missing phenological dates -------------------------------
+
+pheno_estimates <- mapply(function(x, y){
+  estimate_phenology(mdata <- BNR_mapped$EXPERIMENTS,
+                     sdata <- BNR_mapped$OBSERVED_Summary,
+                     wdata <- WEATHER,
+                     crop <- y,
+                     lat <- unique(BNR_mapped$EXPERIMENTS$FL_LAT),
+                     lon <- unique(BNR_mapped$EXPERIMENTS$FL_LON),
+                     year <- x,
+                     irrigated = FALSE)
+}, BNR_mapped$EXPERIMENTS$Year, BNR_mapped$EXPERIMENTS$CRID, SIMPLIFY = FALSE)
+
+BNR_mapped$OBSERVED_Summary <- as_tibble(do.call(rbind, pheno_estimates))
+  
 
 
 # File output -------------------------------------------------------
 
-# Filter
-# Save file by year
-# vMapper
+# EXPORT
+# CHOOSE YEAR FOR SIMU
+# VMAPPER EXPORT AND CONVERT TO DSSAT
+
+# Split crop experiment data by year
+if (multiyear){
+  
+  # Split data by year
+  BNR_mapped_yr <- lapply(BNR_mapped, function(df) split(df, f = df[["Year"]]))
+  BNR_mapped_yr <- revert_list_str(BNR_mapped_yr)
+  names(BNR_mapped_yr) <- paste0("Y", names(BNR_mapped_yr))
+  
+  # Remove empty data frames, e.g., management categories irrelevant for the focal year
+  BNR_mapped_yr <- lapply(BNR_mapped_yr, function(ls) ls[lengths(ls) > 0])
+  
+  # Remove columns with only NAs in each data frame
+  BNR_mapped_yr <- lapply(BNR_mapped_yr, function(ls){
+    ls <- lapply(ls, function(df) {
+      df[, colSums(is.na(df)) != nrow(df)]
+    })
+  })
+  
+  # Reset management IDs
+  mngt_df_nms <- names(BNR_mapped[grepl("MANAGEMENT", names(BNR_mapped))])
+  mngt_ls <- BNR_mapped[names(BNR_mapped) %in% mngt_df_nms]
+  mngt_ids <- unique(unlist(lapply(mngt_ls, function(df) colnames(df)[1]), use.names = FALSE))
+  
+  reset_id <- function(df, id_col) {
+    
+    id <- df[[id_col]]
+    suppressWarnings(
+      min_id <- min(id[id != 0])
+    )
+    
+    id[id > 0] <- id[id > 0] - min_id + 1
+    df[[id_col]] <- id
+    
+    return(df)
+  } #!!
+  
+  BNR_mapped_yr <- lapply(BNR_mapped_yr, function(ls) {
+    
+    # Reset management IDs in treatment matrix
+    for (i in colnames(ls[["TREATMENTS"]])) {
+      if (i %in% mngt_ids) {
+        ls[["TREATMENTS"]] <- reset_id(ls[["TREATMENTS"]], i)
+      }
+    }
+    
+    # Reset management IDs in management data franes
+    ls_mngt <- ls[names(ls) %in% mngt_df_nms]
+    ls_rest <- ls[!names(ls) %in% mngt_df_nms]
+    
+    ls_mngt <- lapply(ls_mngt, function(df) {
+      for (i in colnames(df)) {
+        if (i %in% mngt_ids) {
+          df <- reset_id(df, i)
+        }
+      }
+      return(df)
+    })
+    
+    return(c(ls_rest, ls_mngt))
+  })
+  
+}
+
+# Create a folder for each year (i.e., sublist) and export the dataframes as csv files
+dir.create(paste0("./data/", db_name))
+
+for (i in names(BNR_mapped_yr)) {
+  dir.create(paste0("./data/", db_name, "/Y", i))
+  
+  for (j in names(BNR_mapped_yr[[i]])) {
+    write.csv(BNR_mapped_yr[[i]][[j]], file = paste0("./data/", db_name, "/Y", i, "/", j, ".csv"), row.names = FALSE)
+  }
+}
+
+# Group all folders in a zip file
+zipr("data.zip", files = list.dirs(paste0("./data/", db_name), recursive = FALSE), recurse = TRUE)
+

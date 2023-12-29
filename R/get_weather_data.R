@@ -92,6 +92,8 @@ nearbyStations_solar <- function(lat, lon, res, max_radius = 50){  ##inherit
 # Get station data for each year based on the set quality parameters
 find_stations <- function(lat, lon, min_date, params){
   
+  message("Searching for weather stations...")
+  
   # Set period
   per <- if(min_date <= Sys.Date() %m-% months(18)) { "historical" } else { "recent" }
   
@@ -213,7 +215,7 @@ download_dwd <- function(
         
         # Break the loop if data is available for the target year
         # This check is necessary as some stations have significant time gaps than are not reported in stations metadata
-        if (year %in% year(as_date(data$MESS_DATUM))){
+        if (from_date %in% as_date(data$MESS_DATUM) & to_date %in% as_date(data$MESS_DATUM)){
           break
         }
       }
@@ -528,7 +530,27 @@ get_weather <- function(
       pull(AMP)
   })
   metadata <- map2(metadata, AMP, ~cbind(.x, AMP = .y))
-
   
-  return(list(data = dwd_out, metadata = metadata))
+  
+  # Bind all years in a single dataframe
+  dwd_out <- lapply(dwd_out, function(df){
+    df %>%
+      mutate(Year = year(W_DATE)) %>%  # add year column
+      relocate(Year, .before = everything())
+  })
+  
+  all_cols <- unique(unlist(lapply(dwd_out, colnames)))
+  
+  for (i in seq_along(dwd_out)) {
+    missing_cols <- setdiff(all_cols, names(dwd_out[[i]]))
+    for (j in missing_cols) {
+      dwd_out[[i]][[j]] <- NA
+    }
+  }
+  
+  dwd_out <- lapply(dwd_out, function(x) x[, all_cols])
+  dwd_out_df <- do.call(rbind, dwd_out)
+  row.names(dwd_out_df) <- NULL
+  
+  return(list(data = dwd_out_df, metadata = metadata))
 }
