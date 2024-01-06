@@ -12,12 +12,15 @@ library(lubridate)
 library(rdwd)
 library(zoo) # na.approx, linear interpolation
 library(xml2)
+library(readxl)
 library(zip)
 library(jsonlite)
 library(OSMscale)
 library(spsUtil)
 library(rlang)
 library(cropCalendars)  # Estimate phenology
+library(DSSAT)
+library(rlang)
 
 
 
@@ -38,6 +41,7 @@ source("./R/read_metadata.R")
 
 
 load(file = "./data/wth_data_maps.Rda")
+load(file = "./data/icasa_dssat.Rda")
 
 
 
@@ -75,3 +79,9 @@ load(file = "./data/wth_data_maps.Rda")
 # )
 # 
 # save(nasa_dssat, nasa_icasa, dwd_dssat, dwd_icasa, file = "./data/wth_data_maps.Rda")
+#
+icasa_dssat <- read.csv(
+  "C:/Users/bmlle/Documents/0_DATA/TUM/HEF/2_FAIRagro/UseCases/UC6_IntegratedModeling/Vocabularies/vocabMaps/data/ICASA_DSSAT_maps.csv"
+  )
+
+save(icasa_dssat, file = "./data/icasa_dssat.Rda")
