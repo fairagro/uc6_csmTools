@@ -3,7 +3,7 @@
 #' The string format is analogous to the code_mapping field in standard ARDN SC2 json files around which the standard
 #' mapping files for the package will be build. See: https://agmip.github.io/ARDN/Annotation_SC2.html
 #' 
-#' @param str a code mapping list [format: list('source1: target1', 'source2: target2')] stored as a string
+#' @param vec a code mapping list [format: list('source1: target1', 'source2: target2')] stored as a string
 #' 
 #' @return a lookup dataframe with 2 columns: source (original data) and target (standard data)
 #' 
@@ -12,14 +12,34 @@
 #' @export
 #'
 
-make_code_lookup <- function(str){
+make_code_lookup <- function(vec){
   
-  ls <- eval_tidy(parse_expr(str))
-  ls <- strsplit(as.character(ls), ": ")
-  ls <- lapply(ls, function(x) c(source = x[1], target = x[2]))
-  df <- as.data.frame(do.call(rbind, ls))
-  
-  return(df)
+  if (vec == "1") {
+    lkp <- data.frame(source = NA_character_, tagret = NA_character_)
+  } else {
+    
+    ls <- eval_tidy(parse_expr(vec))
+    ls <- strsplit(as.character(ls), ": ")
+    ls <- lapply(ls, function(x) list(source = x[1], target = x[2]))
+    
+    ls_lkp <- lapply(ls, function(lst) {
+      if (grepl("c\\(", lst$source)) {
+        df <- data.frame(source = strsplit(gsub("[c()]", "", lst$source), ", ")[[1]],
+                         target = lst$target)
+        return(df)
+      } else {
+        df <- as.data.frame(do.call(cbind, lst))
+        return(df)
+      }
+      return(ls)
+    })
+    
+    lkp <- as.data.frame(do.call(rbind, ls_lkp))
+    
+    lkp$target <- ifelse(lkp$target == 1, lkp$source, lkp$target)
+  }
+
+  return(lkp)
 }
 
 
@@ -42,21 +62,20 @@ map_codes <- function(df, map){
   map <- map[map$std_header %in% colnames(df),]
   
   for (i in 1:nrow(map)){
-  
-    if (is.na(map$std_unit[i]) | map$std_unit[i] == "") {
-      next
-    }
-    
+
     if (map$std_unit[i] == "code") {
-      
+
       header <- map$std_header[i]
       
       mappings <- map$code_mappings[i]
       lookup <- make_code_lookup(mappings)
       var <- df[[header]]
       
-      print(header)
-      df[[header]] <- recode_factor(var, !!!setNames(as.list(lookup$target), lookup$source))
+      if (all(is.na(lookup))) {
+        next
+      } else {
+        df[[header]] <- recode_factor(var, !!!setNames(as.list(lookup$target), lookup$source), .default = NA_character_)
+      }
     }
   }
   return(df)
@@ -96,7 +115,7 @@ convert_unit <- function(x, u1, u2){
 #' @export
 #'
 
-map_data <- function(df, tbl_name, map){
+map_data <- function(df, tbl_name, map, keep_unmapped = TRUE){
   
   map <- map[map$table_name == tbl_name,]
   
@@ -128,6 +147,16 @@ map_data <- function(df, tbl_name, map){
         df[[i]] <- convert_unit(df[[i]], map$column_unit[j], map$std_unit[j])
       }
     }
+  }
+  
+  # Drop columns not in standard if required
+  if (keep_unmapped == FALSE) {
+    
+    map_std <- map %>%
+      filter(!is.na(std_header) & std_header != "") %>%
+      pull(std_header)
+    
+    df <- distinct(df[,colnames(df) %in% map_std])
   }
   
   return(df)
