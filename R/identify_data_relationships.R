@@ -59,6 +59,9 @@ get_pkeys <- function(df, alternates = FALSE){
 
 get_parent <- function(tbl, tbl_list) {
   
+  #tbl <- ATTR_tbls$SORTE
+  #tbl_list <- ATTR_tbls
+  
   cols <- colnames(tbl)
   
   pkeys <- lapply(tbl_list, function(df) get_pkeys(df, alternates = FALSE))
