@@ -19,61 +19,102 @@
 
 tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
   
+  # db = DATA_tbls
+  # years_col = YEARS_nm
+  # plots_col = PLOTS_nm
+  # plots_len = PLOTS_n
+  # max_events = 8
+  
   # Tag tables independent of plots as "other" as both management and observed data are tied to the plots
-  df_desc <- lapply(db, function(df){
+  db_desc <- lapply(db, function(df){
     
     if(!plots_col %in% names(df) | !years_col %in% names(df) ){
       
-      attr(df, "category") <- "other"
-      return(df)
+      df$tag <- tag  <- "other"
+      return(as_tibble(df))
     }
   })
+  db_desc <- db_desc[!sapply(db_desc, is.null)]
   
-  df_desc[sapply(df_desc, is.null)] <- NULL
-  
-  
-  db <- db[!names(db) %in% names(df_desc)]
-  
-  db_nokeys <- lapply(db, function(df){
-    
-    plots <- if(plots_col %in% colnames(df)){ plots_col } else { NULL }
-    
-    mngt_id <- get_pkeys(df, alternates = FALSE) # primary keys
-    
-    mngt_cols <- setdiff(names(df), c(mngt_id, plots))
-    df <- df[colnames(df) %in% mngt_cols]
-    df <- distinct(df)
-    
-  })
-  
-  # Calculate number of rows (i.e., unique data) per year
-  rows_yr <- lapply(db_nokeys, function(df){
+  db <- db[!names(db) %in% names(db_desc)]
 
-    df_grouped <- split(df, df[[years_col]]) 
-    result <- sapply(df_grouped, nrow)
-    result <- mean(result)
+  db_tag <- lapply(db, function(df){
     
-    return(result)
+    tag <- df %>%
+      group_by_at(years_col) %>%
+      # Calculate mean number of rows (i.e., unique data) per year
+      # If it is consistently low across years (i.e., < max_events), then it is tagged as management data
+      summarise(n = n_distinct(across(-all_of(c(get_pkeys(df, alternates = FALSE), plots_col)))), .groups = "drop") %>%
+      summarise(n = mean(n)) %>%
+      mutate(tag = ifelse(n <= max_events, "management", "observed")) %>%
+      pull(tag)
+    
+    df$tag <- tag  
+    
+    # Handle obs at the year-level rather than overall
+    # Observed data can over between Summary and TimeSeries categories depending on how many measurements were
+    # taken per year. This may change across years.
+    if ("observed" %in% df$tag) {
+      
+      obs_tag <- df %>%
+        group_by_at(years_col) %>%
+        summarise(n = n()) %>%
+        mutate(obs_cat = ifelse(n <= plots_len, "observed_summary", "observed_timeseries")) %>%
+        ungroup() %>%
+        select(-n)
+      
+      df <- df %>%
+        left_join(obs_tag, by = years_col) %>%
+        mutate(tag = ifelse(tag == "management", "management", obs_cat)) %>%
+        select(-obs_cat)   
+    }
+    
+    return(as_tibble(df))
   })
   
-  df_tags <- lapply(rows_yr, function(x){
-    if(x <= max_events){ 
-      "management" # few data points per plot within year (up to max_event)
-    } else if(x > plots_len) {
-      "observed-timeseries" # more than one data point per plot within year
+  db_tagged <- append(db_tag, db_desc)
+  
+  # Split data frames by tag
+  db_tagged <- lapply(db_tagged, function(df) {
+    if(length(unique(df$tag)) == 1) {
+      ls <- list(df)
+      names(ls) <- unique(df$tag)
+      return(ls)
     } else {
-      "observed-summary" # ca. one data point per plot within year (can be less due to possible duplicate values)
+      split(df, df$tag)
     }
-  } )
+  })
   
-  db_tagged <- mapply(function(df, x){
-    attr(df, "category") <- x
-    return(df)
-  }, db, df_tags, SIMPLIFY = FALSE)
+  # Set all missing tag sublists as NULL to use the revert_list_str function
+  nms <- unique(unlist(lapply(db_tagged, names), use.names = FALSE))
   
-  db_out <- append(db_tagged, df_desc)
+  db_out <- lapply(db_tagged, function(ls) {
+    for (i in nms) {
+      if (!i %in% names(ls)) {
+        ls <- append(ls, setNames(list(NULL), i))
+      }
+    }
+    return(ls)
+  })
+
+  db_out <- revert_list_str(db_out)
+  
+  # Drop NULLS
+  db_out <- lapply(db_out, function(ls) Filter(Negate(is.null), ls))
+
   return(db_out)
+ 
+  # df_grouped <- split(df, df[[years_col]])
+  # result <- sapply(df_grouped, nrow)
+  # result <- mean(result)
   
+  # db_tagged <- mapply(function(df, x){
+  #   attr(df, "category") <- x
+  #   return(df)
+  # }, db, df_tags, SIMPLIFY = FALSE)
+  # 
+  # db_out <- append(db_tagged, df_desc)
+  # return(db_out)
 }
 
 #' Identify if a management type is an experimental treatment
