@@ -26,10 +26,9 @@
 #' @export
 #'
 
-estimate_phenology <- function(mdata, sdata, wdata, crop, lat, lon, year, irrigated = FALSE){
+estimate_phenology <- function(sdata, wdata, crop, lat, lon, year, irrigated = FALSE){
   
   # Apply filters
-  mdata <- mdata %>% filter(CRID == crop & Year == year)  # only when multicrop?
   sdata <- sdata %>% filter(Year == year) ; sdata$MDAT <- ymd(sdata$MDAT)
   wdata <- wdata %>% filter(Year == year)
   irrigated <- ifelse(irrigated, "Irrigated", "Rainfed")  # TODO: add irrigation = TRUE
@@ -40,12 +39,12 @@ estimate_phenology <- function(mdata, sdata, wdata, crop, lat, lon, year, irriga
   
   mclim <- calcMonthlyClimate(lat = lat, temp = d_temp, prec = d_prec, syear = year, eyear = year,
                               incl_feb29 = leap_year(year)) 
-  
+
   for (i in 1:nrow(sdata)){
     
     if (is.na(sdata$MDAT[i])) {
       
-      if (crop %in% c("WHT","BAR")){  # Might have to be done before to handle winter/spring crops
+      if (grepl("WHT|wheat|Wheat|BAR|Barley|barley", crop)){  # Might have to be done before to handle winter/spring crops
         
         calendar <- calcCropCalendars(lon = lon, lat = lat, mclimate = mclim, crop = "Winter_Wheat")
         calendar <- calendar[calendar$irrigation == irrigated,]
@@ -57,7 +56,6 @@ estimate_phenology <- function(mdata, sdata, wdata, crop, lat, lon, year, irriga
         sdata$MDAT[i] <- as_date(mdat)
         sdata$ADAT[i] <- adat  # for loop coerces to vector, convert to date after
         
-      } else if (crop %in% "MAZ"){
         
         calendar <- calcCropCalendars(lon = lon, lat = lat, mclimate = mclim, crop = "Maize")
         calendar <- calendar[calendar$irrigation == irrigated,]

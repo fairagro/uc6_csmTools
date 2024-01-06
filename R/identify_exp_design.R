@@ -11,8 +11,16 @@
 
 get_years_col <- function(df, start, end){
   
+  if (is_date(start)) { 
+    start <- year(start)
+  }
+  
+  if (is_date(end)) { 
+    end <- year(end)
+  }
+  
   is_year <- apply(df, 2, function(x)
-    all(x >= year(start)) & all(x <= year(end))
+    all(x >= start) & all(x <= end)
   )
   
   return(names(df[is_year]))
@@ -44,7 +52,6 @@ get_treatments_col <- function(design_tbl, years_col, plots_col){
   trt_col <- NULL
   reps_n <- NULL
   for (i in cols) {
-    #i = cols[3]
     
     reps <- design_noplots %>%
       group_by(.[[i]]) %>% 
