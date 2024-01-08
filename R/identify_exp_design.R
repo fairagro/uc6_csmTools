@@ -83,7 +83,6 @@ get_tbl <- function(db, pkey){
   
   pkeys <- lapply(db, function(df) get_pkeys(df, alternates = FALSE))
   tbl <- db[[which(pkeys == pkey)]]
-  attr(tbl, "tbl_name") <- names(db[which(pkeys == pkey)])
   
   return(tbl)
 } 

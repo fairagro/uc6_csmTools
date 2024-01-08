@@ -82,6 +82,19 @@ revert_list_str <- function(ls) {
   apply(do.call(rbind, x), 2, as.list) 
 }
 
+#'
+#'
+#'
+#'
+#'
+#'
+#'
+
+get_df_name <- function(ls, df) {
+  names(ls)[sapply(ls, function(x) identical(x, df))]
+}
+
+
 #' Append data frame attributes to the first non-join columns so that they are not lost at joining
 #' 
 #' @return a list containing the two data frames with the attributes appended to the first non-join columns
