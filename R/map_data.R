@@ -115,9 +115,12 @@ convert_unit <- function(x, u1, u2){
 #' @export
 #'
 
-map_data <- function(df, tbl_name, map, keep_unmapped = TRUE){
+map_data <- function(df, tbl_name, map, keep_unmapped = TRUE, col_exempt = NULL){
   
-  map <- map[map$table_name == tbl_name,]
+  df0 <- df  # Store original data
+  map <- map[map$table_name == tbl_name,]  # Restrict map to the focal data section
+  mapped_cols <- c()  # Empty vector to store mapped column names
+  
   
   # Map headers
   for (i in seq_along(colnames(df))) {
@@ -127,11 +130,15 @@ map_data <- function(df, tbl_name, map, keep_unmapped = TRUE){
         if (is.na(map$column_header[j]) | map$std_header[j] == "") {
           next
         }
+        mapped_cols <- c(mapped_cols, colnames(df)[i])
         colnames(df)[i] <- map$std_header[j]
       }
     }
   }
   
+  # Store unmapped variables
+  unmapped_cols <- setdiff(colnames(df0), mapped_cols)
+
   # Map codes
   df <- map_codes(df, map)
   
@@ -150,13 +157,10 @@ map_data <- function(df, tbl_name, map, keep_unmapped = TRUE){
   }
   
   # Drop columns not in standard if required
-  if (keep_unmapped == FALSE) {
-    
-    map_std <- map %>%
-      filter(!is.na(std_header) & std_header != "") %>%
-      pull(std_header)
-    
-    df <- distinct(df[,colnames(df) %in% map_std])
+  if (keep_unmapped) {
+    df <- distinct(df[, !colnames(df) %in% col_exempt])
+  } else {
+    df <- distinct(df[, !colnames(df) %in% setdiff(unmapped_cols, col_exempt)])
   }
   
   return(df)
