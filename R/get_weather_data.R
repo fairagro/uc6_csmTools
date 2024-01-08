@@ -323,6 +323,24 @@ format_weather <- function(data, lookup) {
   return(out)
 }
 
+#' Convert weather metadata table into data frame attributes
+#' 
+#' @param df ###
+#' @param header ###
+#' 
+#' @return ###
+#' 
+#' @export
+#'
+
+headers_to_attr <- function(df, header) {
+  for (col in names(header)) {
+    attr(df, col) <- header[[col]]
+  }
+  return(df) 
+}
+
+
 #' Impute missing values in daily weather time series data
 #' 
 #' So far only performs linear interpolation and extrapolation. Other methods will be added in the future.
@@ -551,6 +569,6 @@ get_weather <- function(
   dwd_out <- lapply(dwd_out, function(x) x[, all_cols])
   dwd_out_df <- do.call(rbind, dwd_out)
   row.names(dwd_out_df) <- NULL
-  
+
   return(list(data = dwd_out_df, metadata = metadata))
 }
