@@ -21,6 +21,7 @@ library(rlang)
 library(cropCalendars)  # Estimate phenology
 library(DSSAT)
 library(rlang)
+library(countrycode)
 
 
 
@@ -42,6 +43,7 @@ source("./R/read_metadata.R")
 
 load(file = "./data/wth_data_maps.Rda")
 load(file = "./data/icasa_dssat.Rda")
+load(file = "./data/bnr_seehausen_icasa.Rda")
 
 
 
@@ -80,8 +82,16 @@ load(file = "./data/icasa_dssat.Rda")
 # 
 # save(nasa_dssat, nasa_icasa, dwd_dssat, dwd_icasa, file = "./data/wth_data_maps.Rda")
 #
-icasa_dssat <- read.csv(
-  "C:/Users/bmlle/Documents/0_DATA/TUM/HEF/2_FAIRagro/UseCases/UC6_IntegratedModeling/Vocabularies/vocabMaps/data/ICASA_DSSAT_maps.csv"
-  )
-
-save(icasa_dssat, file = "./data/icasa_dssat.Rda")
+# icasa_dssat <- read.csv(
+#   "C:/Users/bmlle/Documents/0_DATA/TUM/HEF/2_FAIRagro/UseCases/UC6_IntegratedModeling/Vocabularies/vocabMaps/data/ICASA_DSSAT_maps.csv"
+#   )
+# 
+# save(icasa_dssat, file = "./data/icasa_dssat.Rda")
+#
+#
+# bnr_seehausen_icasa <- read.csv(
+#   "C:/Users/bmlle/Documents/0_DATA/TUM/HEF/2_FAIRagro/UseCases/UC6_IntegratedModeling/Workflows/csmTools/inst/extdata/lte_seehausen/lte_seehausen_ICASA_map.csv",
+#   fileEncoding = "latin1"
+# ) %>% mutate_all(., ~ifelse(is.na(.x), "", .x))
+# 
+# save(bnr_seehausen_icasa, file = "./data/BnR_seehausen_icasa.Rda")
