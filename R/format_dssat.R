@@ -71,25 +71,21 @@ split_by_year <- function(ls) {
   })
   
   # Reset management IDs
-  FILEX_sections <- c("GENERAL","TREATMENTS","CULTIVARS","FIELDS","SOIL_ANALYSES","INITIAL_CONDITIONS",
-                      "PLANTING_DETAILS","TILLAGE","IRRIGATION","FERTILIZERS","RESIDUES","CHEMICALS",
-                      "ENVIRONMENT_MODIFICATIONS","HARVEST","SIMULATION_CONTROLS")
-  FILEX_ls <- ls[names(ls) %in% FILEX_sections]
-  FILEX_sec_ids <- unique(unlist(lapply(mngt_ls, function(df) colnames(df)[1]), use.names = FALSE))
-  FILEX_trt_ids <- c("CU", "FL", "SA", "IC", "MP", "MI", "MF", "MR", "MC", "MT", "ME", "MH", "SM")
+  filex_sec_ids <- unique(unlist(lapply(mngt_ls, function(df) colnames(df)[1]), use.names = FALSE))
+  filex_trt_ids <- c("CU", "FL", "SA", "IC", "MP", "MI", "MF", "MR", "MC", "MT", "ME", "MH", "SM")
   
   ls_yr <- lapply(ls_yr, function(ls) {
     
     # Reset management IDs in treatment matrix #!! CHECK!!! FERTILIZER
     for (i in colnames(ls[["TREATMENTS"]])) {
-      if (i %in% FILEX_trt_ids) {
+      if (i %in% filex_trt_ids) {
         ls[["TREATMENTS"]] <- reset_id(ls[["TREATMENTS"]], i)
       }
     }
     
     # Reset management IDs in management data franes
-    ls_mngt <- ls[names(ls) %in% FILEX_sections]
-    ls_rest <- ls[!names(ls) %in% FILEX_sections]
+    ls_mngt <- ls[names(ls) %in% filex_sections]
+    ls_rest <- ls[!names(ls) %in% filex_sections]
     
     ls_mngt <- lapply(ls_mngt, function(df) {
       for (i in colnames(df)) {
@@ -240,18 +236,14 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
   # Set section in the right order
   filex <- filex[match(names(FILEX_template), names(filex))]
   filex <- filex[lengths(filex) > 0]
-  
-  # Update the list
-  idx <- intersect(names(ls), names(filex))
-  ls[idx] <- filex[idx]
-  
+
   # Set atributes for file export
-  attr(ls, "experiment") <- title
+  attr(filex, "experiment") <- title
   extension <- paste0(unique(ls[["CULTIVARS"]]$CR), "X")
-  attr(ls, "file_name") <- paste0(site_code, substr(year, nchar(year) - 1, nchar(year)), "01.", extension)
-  attr(ls, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
+  attr(filex, "file_name") <- paste0(site_code, substr(year, nchar(year) - 1, nchar(year)), "01.", extension)
+  attr(filex, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
   
-  return(ls)
+  return(filex)
 }
 
 
@@ -287,11 +279,13 @@ build_filea <- function(ls, title = NULL, site_code = NA_character_) {
     extension <- paste0(unique(ls[["CULTIVARS"]]$CR), "A")
     attr(filea, "file_name") <- paste0(site_code, substr(year, nchar(year) - 1, nchar(year)), "01.", extension)
     attr(filea, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
+
+  } else {
     
-    ls[["OBSERVED_Summary"]] <- filea
+    filea <- NULL
   }
   
-  return(ls)
+  return(filea)
 }
 
 
@@ -328,10 +322,12 @@ build_filet <- function(ls, title = NULL, site_code = NA_character_) {
     attr(filet, "file_name") <- paste0(site_code, substr(year, nchar(year) - 1, nchar(year)), "01.", extension)
     attr(filet, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
     
-    ls[["OBSERVED_TimeSeries"]] <- filet
+  } else {
+    
+    filet <- NULL
   }
   
-  return(ls)
+  return(filet)
 }
 
 
@@ -362,14 +358,9 @@ build_sol <- function(ls) {
   data <- bind_cols(header_dups, data)
   
   # Apply the template format for daily weather data
-  data_out <- format_table(data, SOIL_template)
+  sol <- format_table(data, SOIL_template)
   
-  #
-  ls[["SOIL"]] <- data_out
-  ls[["SOIL_Layers"]] <- NULL
-  ls[["SOIL_Header"]] <- NULL
-  
-  return(ls)
+  return(sol)
 }
 
 
@@ -394,7 +385,7 @@ build_wth <- function(ls) {
   comments <- attr(ls[["WEATHER_Daily"]], "comments")
   
   # Apply the template format for daily weather data
-  data <- format_table(data, WEATHER_template) %>%
+  wth <- format_table(data, WEATHER_template) %>%
     mutate(across(where(is.POSIXct), ~ format(as.Date(.x), "%y%j"))) 
   
   # Make file names
@@ -402,15 +393,45 @@ build_wth <- function(ls) {
   year <- ls[["WEATHER_Header"]]$Year
   
   # Set metadata as attributes
-  attr(data, "GENERAL") <- as_DSSAT_tbl(header[!names(header) == "Year"])
-  attr(data, "location") <- ls[["GENERAL"]]$SITE
-  attr(data, "comments") <- comments
-  attr(data, "file_name") <- paste0(insi, substr(year, nchar(year) - 1, nchar(year)), "01.WTH")
+  attr(wth, "GENERAL") <- as_DSSAT_tbl(header[!names(header) == "Year"])
+  attr(wth, "location") <- ls[["GENERAL"]]$SITE
+  attr(wth, "comments") <- comments
+  attr(wth, "file_name") <- paste0(insi, substr(year, nchar(year) - 1, nchar(year)), "01.WTH")
   
-  #
-  ls[["WEATHER"]] <- data
-  ls[["WEATHER_Daily"]] <- NULL
-  ls[["WEATHER_Header"]] <- NULL
+  return(wth)
+}
+
+
+#' Map categorical data to standard codes
+#' 
+#' Currently handles lookup tables as maps rather than json SC2 files, which will be implemented in the future.
+#' 
+#' @param df a data frame of the data to be mapped
+#' @param map a lookup table of the categories to be madde to standard codes, as generated by 'made_code_lookup'
+#' 
+#' @return a data frame with codes mapped to the format specified in the supplied map
+#' 
+#' @importFrom dplyr recode_factor
+#' 
+#' @export
+#'
+
+write_dssat <- function(ls, path = getwd()) {
   
-  return(ls)
+  # Write functions (from DSSAT package)
+  write_funcs <- list(
+    FILEX = write_filex,
+    FILEA = write_filea,
+    FILET = write_filet,
+    SOL = write_sol,
+    WTH = write_wth
+  )
+  
+  walk(names(write_funcs), ~{
+    if (!is.null(ls[[.]])) {
+      write_funcs[[.]](ls[[.]], file_name = paste0(path, "/", attr(ls[[.]], "file_name")))
+    } else if (. %in% c("filex", "wth", "sol")) {
+      warning(paste0("Required ", ., " file is missing."))
+    }
+  })
 }
