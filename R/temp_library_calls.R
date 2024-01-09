@@ -34,7 +34,11 @@ source("./R/get_weather_data.R")
 source("./R/identify_data_relationships.R")
 source("./R/identify_exp_design.R")
 source("./R/merge_tbls.R")
+source("./R/reshape_exp_data.R")
 source("./R/read_metadata.R")
+source("./R/map_data.R")
+source("./R/format_dssat.R")
+source("./R/dssat_file_templates.R")
 
 
 
