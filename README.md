@@ -1,20 +1,24 @@
 # csmTools
 ETL functions for semi-automated data integration into crop simulation modeling
 
+
 ## Problem description
 Crop experiment datasets are generally published as collections of tables describing the experimental design, management events, and measured variables. These tables are linked to one another by identifier variables, as in a relational database (primary/foreign keys).
 Many crop simulation model frameworks, such as DSSAT and APSIM, have standard annotation conventions (i.e., variable names, units, relationships) that can be mapped with automated workflows to a single data dictionary, the [ICASA dictionary](https://docs.google.com/spreadsheets/u/0/d/1MYx1ukUsCAM1pcixbVQSu49NU-LfXg-Dtt-ncLBzGAM/pub?output=html), in order to facilitate model intercomparison.
 The ICASA dictionary covers an extensive range of crop experiment variables for a variety of cropping systems. It follows a category structure analogous to common data structures of crop experiment datasets. However, because the relationships between different tables can be defined in multiple ways, crop experiment datasets must be reshaped to the standard input format to become usable as model inputs. This is an essential preliminary step to variable mapping, that can be carried out using existing tools such as the [ARDN vMapper](https://data.agmip.org/ardn/tools/vmapper) (for unstructured dataset) or with pre-defined data maps.
 
+
 ## Tool purpose
 csmTools aims to facilitate the ETL process for crop modelers by offering functions to identify and reshape datasets, map variables, perform simulations, and evaluate the quality of model inputs and outputs with graphical tools.
+
 
 ## Current version
 Currently, available functions have been developed based on a prototype dataset [Seehausen Long-term Fertilization Experiment](https://doi.org/10.20387/bonares-3nqn-41vn) published on the [BonaRes Repository](https://www.bonares.de/research-data). T
 The ETL process can be chiefly divided into four steps: (1) data identification and reshaping, (2) variable mapping, (3) data transformation into model input, and (4) simulation and visualization.
 
-## Prototype script
-A test script allows to run the entire pipeline, from raw data to simulation output, on the example data: [Test script](inst/etl_pipeline_example.R)
+
+## Test script
+A [test script](inst/etl_pipeline_example.R) allows to run the entire pipeline, from raw data to simulation output, on the example data.
 
 ### Data sources
 All [raw data](inst/extdata/lte_seehausen/0_raw), [model inputs](inst/extdata/lte_seehausen/1_out), and [model outputs](inst/extdata/lte_seehausen/1_sim) can be found in the [external data folder](inst/extdata/lte_seehausen).
