@@ -386,13 +386,22 @@ build_wth <- function(ls) {
   
   # Apply the template format for daily weather data
   wth <- format_table(data, WEATHER_template) %>%
-    mutate(across(where(is.POSIXct), ~ format(as.Date(.x), "%y%j"))) 
+    mutate(DATE = format(as.Date(DATE), "%y%j"))
+  
+  # Corrected print formats (temp workaround for date formatting issue with write_wth)
+  wth_fmt <- c(DATE = "%5s",  # instead of %7s
+               SRAD = "%6.1f", TMAX = "%6.1f",TMIN = "%6.1f",
+               RAIN = "%6.1f", DEWP = "%6.1f", WIND = "%6.0f",
+               PAR = "%6.1f", EVAP = "%6.1f", RHUM = "%6.1f"
+  )
+  #wth <- as.data.frame(mapply(function(x, y) sprintf(y, x), wth, wth_fmt))
   
   # Make file names
   insi <- header$INSI
   year <- ls[["WEATHER_Header"]]$Year
   
   # Set metadata as attributes
+  attr(wth, "v_fmt") <- wth_fmt  # corrected print formats
   attr(wth, "GENERAL") <- as_DSSAT_tbl(header[!names(header) == "Year"])
   attr(wth, "location") <- ls[["GENERAL"]]$SITE
   attr(wth, "comments") <- comments
@@ -402,7 +411,6 @@ build_wth <- function(ls) {
 }
 
 
-#' Map categorical data to standard codes
 #' 
 #' Currently handles lookup tables as maps rather than json SC2 files, which will be implemented in the future.
 #' 
@@ -416,6 +424,11 @@ build_wth <- function(ls) {
 #' @export
 #'
 
+# temp workaround for date formatting issue with DSSAT::write_wth (open an issue on GitHub)
+write_wth2 <- function(wth, file_name) {
+  write_wth(wth = wth, file_name = file_name, force_std_fmt = FALSE)
+}
+
 write_dssat <- function(ls, path = getwd()) {
   
   # Write functions (from DSSAT package)
@@ -424,7 +437,7 @@ write_dssat <- function(ls, path = getwd()) {
     FILEA = write_filea,
     FILET = write_filet,
     SOL = write_sol,
-    WTH = write_wth
+    WTH = write_wth2
   )
   
   walk(names(write_funcs), ~{
