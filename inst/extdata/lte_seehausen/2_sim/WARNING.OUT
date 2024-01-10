@@ -2,7 +2,7 @@
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.0.027 -release  JAN 10, 2024 00:27:28
+*DSSAT Cropping System Model Ver. 4.8.0.027 -release  JAN 10, 2024 21:16:38
 
 *RUN   1        : 1 | 1                     WHAPS048 SEDE9501    1
  MODEL          : WHAPS048 - Wheat
@@ -31,66 +31,66 @@
  IPWTH   YEAR DOY = 1994 311
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      322                                                                 
+ Line      323                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 315
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      326                                                                 
+ Line      327                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 328
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      339                                                                 
+ Line      340                                                                 
  SRAD =   0.50 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 334
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      345                                                                 
+ Line      346                                                                 
  SRAD =   0.80 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 356
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      367                                                                 
+ Line      368                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 358
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      369                                                                 
+ Line      370                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 359
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      370                                                                 
+ Line      371                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 361
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      372                                                                 
+ Line      373                                                                 
  SRAD =   0.60 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1995   7
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9501.WTH                                               
- Line       18                                                                 
+ Line       19                                                                 
  SRAD =   0.80 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1995  30
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9501.WTH                                               
- Line       41                                                                 
+ Line       42                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.0.027 -release  JAN 10, 2024 00:27:28
+*DSSAT Cropping System Model Ver. 4.8.0.027 -release  JAN 10, 2024 21:16:38
 
 *RUN   2        : 1 | 2                     WHAPS048 SEDE9501    2
  MODEL          : WHAPS048 - Wheat
@@ -119,75 +119,75 @@
  IPWTH   YEAR DOY = 1994 311
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      322                                                                 
+ Line      323                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 315
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      326                                                                 
+ Line      327                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 328
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      339                                                                 
+ Line      340                                                                 
  SRAD =   0.50 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 334
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      345                                                                 
+ Line      346                                                                 
  SRAD =   0.80 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 356
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      367                                                                 
+ Line      368                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 358
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      369                                                                 
+ Line      370                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 359
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      370                                                                 
+ Line      371                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 361
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      372                                                                 
+ Line      373                                                                 
  SRAD =   0.60 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1995   7
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9501.WTH                                               
- Line       18                                                                 
+ Line       19                                                                 
  SRAD =   0.80 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1995  30
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9501.WTH                                               
- Line       41                                                                 
+ Line       42                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
+
+ NWGRNI  YEAR DOY = 1995 190
+ pnout bound check >navl error                                                 
+
+ NWGRNI  YEAR DOY = 1995 191
+ pnout bound check >navl error                                                 
 
  NWGRNI  YEAR DOY = 1995 192
  pnout bound check >navl error                                                 
 
- NWGRNI  YEAR DOY = 1995 193
- pnout bound check >navl error                                                 
-
- NWGRNI  YEAR DOY = 1995 194
- pnout bound check >navl error                                                 
-
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.0.027 -release  JAN 10, 2024 00:27:28
+*DSSAT Cropping System Model Ver. 4.8.0.027 -release  JAN 10, 2024 21:16:38
 
 *RUN   3        : 1 | 3                     WHAPS048 SEDE9501    3
  MODEL          : WHAPS048 - Wheat
@@ -216,81 +216,72 @@
  IPWTH   YEAR DOY = 1994 311
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      322                                                                 
+ Line      323                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 315
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      326                                                                 
+ Line      327                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 328
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      339                                                                 
+ Line      340                                                                 
  SRAD =   0.50 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 334
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      345                                                                 
+ Line      346                                                                 
  SRAD =   0.80 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 356
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      367                                                                 
+ Line      368                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 358
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      369                                                                 
+ Line      370                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 359
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      370                                                                 
+ Line      371                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 361
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      372                                                                 
+ Line      373                                                                 
  SRAD =   0.60 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1995   7
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9501.WTH                                               
- Line       18                                                                 
+ Line       19                                                                 
  SRAD =   0.80 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1995  30
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9501.WTH                                               
- Line       41                                                                 
+ Line       42                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
- NWGRNI  YEAR DOY = 1995 185
+ NWGRNI  YEAR DOY = 1995 190
  pnout bound check >navl error                                                 
 
- NWGRNI  YEAR DOY = 1995 186
- pnout bound check >navl error                                                 
-
- NWGRNI  YEAR DOY = 1995 187
- pnout bound check >navl error                                                 
-
- NWGRNI  YEAR DOY = 1995 189
- pnout bound check >navl error                                                 
-
- NWGRNI  YEAR DOY = 1995 192
+ NWGRNI  YEAR DOY = 1995 191
  pnout bound check >navl error                                                 
 
 ******************************************************************************
 
-*DSSAT Cropping System Model Ver. 4.8.0.027 -release  JAN 10, 2024 00:27:28
+*DSSAT Cropping System Model Ver. 4.8.0.027 -release  JAN 10, 2024 21:16:38
 
 *RUN   4        : 1 | 4                     WHAPS048 SEDE9501    4
  MODEL          : WHAPS048 - Wheat
@@ -319,65 +310,68 @@
  IPWTH   YEAR DOY = 1994 311
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      322                                                                 
+ Line      323                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 315
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      326                                                                 
+ Line      327                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 328
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      339                                                                 
+ Line      340                                                                 
  SRAD =   0.50 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 334
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      345                                                                 
+ Line      346                                                                 
  SRAD =   0.80 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 356
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      367                                                                 
+ Line      368                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 358
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      369                                                                 
+ Line      370                                                                 
  SRAD =   0.90 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 359
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      370                                                                 
+ Line      371                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1994 361
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9401.WTH                                               
- Line      372                                                                 
+ Line      373                                                                 
  SRAD =   0.60 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1995   7
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9501.WTH                                               
- Line       18                                                                 
+ Line       19                                                                 
  SRAD =   0.80 MJ.m-2.d-1                                                      
 
  IPWTH   YEAR DOY = 1995  30
  Warning: SRAD < 1 MJ.m-2.d-1.                                                 
  C:\DSSAT48\Weather\SEDE9501.WTH                                               
- Line       41                                                                 
+ Line       42                                                                 
  SRAD =   0.70 MJ.m-2.d-1                                                      
+
+ NWGRNI  YEAR DOY = 1995 185
+ pnout bound check >navl error                                                 
 
  NWGRNI  YEAR DOY = 1995 188
  pnout bound check >navl error                                                 
 
- NWGRNI  YEAR DOY = 1995 192
+ NWGRNI  YEAR DOY = 1995 191
  pnout bound check >navl error                                                 

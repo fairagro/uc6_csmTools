@@ -20,8 +20,11 @@
 
 # Load libraries ----------------------------------------------------------
 
-# All libraries should be installed first. Check the NAMESPACE package for the list.
-source("./R/temp_library_calls.R")
+# Only run if libraries are not locally installed or to update them (NB: all at once!)
+#source("./inst/install_libraries.R")
+
+# Load libraries, internal data (e.g., vocabularies and maps), and internal functions
+source("./inst/load_libraries.R")
 
 
 # Load data ---------------------------------------------------------------
@@ -116,8 +119,7 @@ GENERAL <- seehausen_fmt$GENERAL %>%
 FIELDS <- seehausen_fmt$FIELDS %>%
   mutate(FLELE = (PARZELLE.Hoehenlage_Min+PARZELLE.Hoehenlage_Max)/2) %>%  #? Make mutate fun that replaces components
   mutate(SOIL_ID = "IB00000001",  # Currently generic soil is used
-         WEATHER_ID = "SEDE") %>%  # Institute + Site: TU Munich, Muenchenberg
-  relocate(c(SOIL_ID, WEATHER_ID), .before = everything())
+         WEATHER_ID = "SEDE")  # Institute + Site: TU Munich, Muenchenberg
   
 
 
@@ -284,8 +286,8 @@ OBSERVED_Summary <- seehausen_fmt$OBSERVED_Summary
 
 # Mapping to ICASA --------------------------------------------------------
 
-BNR_full <- list(GENERAL = GENERAL,##
-                 FIELDS = FIELDS, ##
+BNR_full <- list(GENERAL = GENERAL,
+                 FIELDS = FIELDS,
                  TREATMENTS = TREATMENTS,
                  INITIAL_CONDITIONS = INITIAL_CONDITIONS,
                  TILLAGE = seehausen_fmt$BODENBEARBEITUNG,
@@ -459,7 +461,7 @@ for (i in seq_along(names(BNR_mapped))) {
 
 BNR_dssat_yr <- split_by_year(BNR_dssat)
 
-# Append soil to each year (single profile for now)
+# Append non-year-specific data
 BNR_dssat_yr <- lapply(BNR_dssat_yr, function(x)
   append(x, list(GENERAL = BNR_dssat$GENERAL, FIELDS = BNR_dssat$FIELDS))
 )
@@ -547,6 +549,7 @@ for (i in names(BNR_yr_merged)) {
   write_dssat(BNR_yr_merged[[i]], path = paste0(path, "/", i))
 }
 
+BNR_sol <- BNR_sol %>% rename(`SCS FAMILY` = SCS.FAMILY)  # problematic variable name with space
 write_sol(BNR_sol, title = "General DSSAT Soil Input File", file_name = paste0(path, "/SEDE.SOL"),
           append = FALSE)
 #TODO: generate file_name and title in the build_sol function
@@ -560,6 +563,7 @@ write_sol(BNR_sol, title = "General DSSAT Soil Input File", file_name = paste0(p
 options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
 
 # Specify dir for simulations: input files, batch files and simulations all stored there
+dssat_dir <- "C:/DSSAT48"
 old_wd <- getwd()
 sim_wd <- paste0(old_wd, "./inst/extdata/lte_seehausen/2_sim")
 setwd(sim_wd)
@@ -581,11 +585,11 @@ lteSe_1995_filex$FERTILIZERS$FDEP <- 10  # fertilizer application depth
 # NB: parameter fitting script should be used eventually, for now we use a median cultivar based on the provided
 # minima and maxima for genetic parameters
 
-whaps_cul <- read_cul("C:/DSSAT48/Genotype/WHAPS048.CUL")
+whaps_cul <- read_cul(paste0(dssat_dir, "/Genotype/WHAPS048.CUL"))
 
 cul_median_pars <- apply(whaps_cul[1:2, 5:ncol(whaps_cul)], 2, function(x) sum(x)/2)
 
-whaps_cul <- add_cultivar(whaps_cul,
+whaps_cul <- add_cultivar(whaps_cul,  # if the cultivar is still in the file (error) just ignore and move on
                           ccode = "IB9999",
                           cname = "Borenos",
                           ecode = "IB0001",
@@ -594,13 +598,13 @@ whaps_cul <- add_cultivar(whaps_cul,
 )
 lteSe_1995_filex$CULTIVARS$INGENO <- "IB9999"  # cultivat code in file X links to cultivar file
 
-write_cul(whaps_cul, "C:/DSSAT48/Genotype/WHAPS048.CUL")  # export the updated file
+write_cul(whaps_cul, paste0(dssat_dir, "/Genotype/WHAPS048.CUL"))  # export the updated file
 
 
 # Set simulation controls
 
 # Simulation start date: by default at the earliest management event carried out
-all_dates <- na.omit(
+all_dates <- na.omit(  # ignore warning
   as.POSIXct(
     as.numeric(
   unlist(lapply(lteSe_1995_filex, function(df) {
@@ -637,8 +641,8 @@ write_filea(BNR_yr_merged$Y1995$FILEA, paste0(sim_wd, "/SEDE9501.WHA"))
 # the harvest years (typically planting/tillage)
 unique(year(all_dates))  # 1994, 1995 ==> two weather files required
 
-write_wth2(BNR_yr_merged$Y1994$WTH, "C:/DSSAT48/Weather/SEDE9401.WTH")
-write_wth2(BNR_yr_merged$Y1995$WTH, "C:/DSSAT48/Weather/SEDE9501.WTH")
+write_wth2(BNR_yr_merged$Y1994$WTH, paste0(dssat_dir, "/Weather/SEDE9401.WTH"))
+write_wth2(BNR_yr_merged$Y1995$WTH, paste0(dssat_dir, "/Weather/SEDE9501.WTH"))
 
 # Soil profile not copied as generic soil was used in this example(already in DSSAT Soil directory)
 #write_sol(BNR_yr_merged$Y1995$WTH, "C:/Program Files (x86)/DSSAT48/Soil/SEDE.SOL")  # soil profile

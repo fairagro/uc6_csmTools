@@ -1,6 +1,6 @@
 *EXP.DETAILS: LTE Seehausen, Duengungs-Kombinationsversuch Seehausen (F1-70)
 
-! File generated on 2024-01-09 with csmTools
+! File generated on 2024-01-10 with csmTools
 *GENERAL
 @PEOPLE
 -99
@@ -11,7 +11,8 @@ Seehausen, Germany
 @ PAREA  PRNO  PLEN  PLDR  PLSP  PLAY HAREA  HRNO  HLEN  HARM.........
     -99   -99   -99   -99   -99   -99   -99   -99   -99  -99          
 @NOTES
-c("Data files mapped on 2024-01-08 with csmTools", "Source data DOI: NA")
+Data files mapped on 2024-01-10 with csmTools
+Source data DOI: -99
 
 *TREATMENTS                        -------------FACTOR LEVELS------------
 @N R O C TNAME.................... CU FL SA IC MP MI MF MR MC MT ME MH SM

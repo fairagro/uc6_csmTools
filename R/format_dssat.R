@@ -35,7 +35,7 @@ reset_id <- function(df, id_col) {
 #'
 
 split_by_year <- function(ls) {
-  
+
   # Drop metadata common to all years
   ls_ipt <- ls[!names(ls) %in% c("GENERAL", "FIELDS", "SOIL_Header", "SOIL_Layers")]  #!!
   
@@ -66,25 +66,25 @@ split_by_year <- function(ls) {
   })
   
   # Reset management IDs
-  filex_sec_ids <- unique(unlist(lapply(mngt_ls, function(df) colnames(df)[1]), use.names = FALSE))
+  filex_sec_ids <- c("N", "C", "L", "A", "C", "P", "T", "I", "F", "R", "C", "E", "H")
   filex_trt_ids <- c("CU", "FL", "SA", "IC", "MP", "MI", "MF", "MR", "MC", "MT", "ME", "MH", "SM")
   
   ls_yr <- lapply(ls_yr, function(ls) {
     
+    ls_mngt <- ls[names(ls) %in% filex_sections]
+    ls_rest <- ls[!names(ls) %in% filex_sections]
+    
     # Reset management IDs in treatment matrix #!! CHECK!!! FERTILIZER
-    for (i in colnames(ls[["TREATMENTS"]])) {
+    for (i in colnames(ls_mngt[["TREATMENTS"]])) {
       if (i %in% filex_trt_ids) {
-        ls[["TREATMENTS"]] <- reset_id(ls[["TREATMENTS"]], i)
+        ls_mngt[["TREATMENTS"]] <- reset_id(ls_mngt[["TREATMENTS"]], i)
       }
     }
     
     # Reset management IDs in management data franes
-    ls_mngt <- ls[names(ls) %in% filex_sections]
-    ls_rest <- ls[!names(ls) %in% filex_sections]
-    
     ls_mngt <- lapply(ls_mngt, function(df) {
       for (i in colnames(df)) {
-        if (i %in% FILEX_sec_ids) {
+        if (i %in% filex_sec_ids) {
           df <- reset_id(df, i)
         }
       }
