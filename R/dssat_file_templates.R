@@ -2,9 +2,9 @@
 #'
 #' @export
 #' 
-#' @importFrom magrittr "%>%"
 #' @importFrom dplyr rename
-
+#' 
+#' 
 
 # File X template ---------------------------------------------------------
 
@@ -252,8 +252,9 @@ SOIL_template <-
     DESCRIPTION = NA_character_, SITE = NA_character_, COUNTRY = NA_character_, LAT = NA_real_, LONG = NA_real_,
     `SCS FAMILY` = NA_character_, SCOM = NA_character_, SALB = NA_real_, SLU1 = NA_real_, SLDR = NA_real_, SLRO = NA_real_,
     SLNF = NA_real_, SLPF = NA_real_, SMHB = NA_character_, SMPX = NA_character_, SMKE = NA_character_
-  ) %>%
-  rename(`SCS FAMILY` = SCS.FAMILY)
+  )
+
+rename(SOIL_template, `SCS FAMILY` = SCS.FAMILY)
 
 SOIL_template$SLB <- list(NA_real_)
 SOIL_template$SLMH <- list(NA_character_)
