@@ -22,7 +22,7 @@ library(cropCalendars)  # Estimate phenology
 library(DSSAT)
 library(rlang)
 library(countrycode)
-
+library(ggplot2)
 
 
 # Package functions -------------------------------------------------------

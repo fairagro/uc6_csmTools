@@ -1,20 +1,20 @@
-#' ####
+#' Format metadata for use as input arguments in crop experiment data wrangling functions
 #' 
-#' ####
+#' Currently handles only old xml formats of the BonaRes repository (no longer available as of 10.01.2024)
+#'  
+#' @export
 #' 
-#' @param path ###
-#' @param repo ###
+#' @param path a length 1 character vector containing the url to the metadata file
+#' @param repo a length 1 character containing the name or acronym of the data repository from which the metadata was downloaded
 #' @param sheet ###
 #' 
-#' @return ###
+#' @return a formatted metadata item (TODO: define standard schema) ####
 #' 
 #' @importFrom xml2 read_xml xml_text xml_find_all xml_find_first
 #' @importFrom purrr map
-#' @importFrom dplyr bind_rows distinct
+#' @importFrom dplyr "%>%" bind_rows distinct
 #' @importFrom readxl read_excel
 #' @importFrom readODS read_ods
-#' 
-#' @export
 #'
 
 read_metadata <- function(path, repo, sheet = NULL){

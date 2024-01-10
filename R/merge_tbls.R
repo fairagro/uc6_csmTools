@@ -2,6 +2,8 @@
 #' 
 #' Detects join keys between two related data tables and join tables accordingly
 #' 
+#' @export
+#' 
 #' @param parent_list a list containing the parent data frames
 #' @param child_list a list containing the child data frames
 #' @param type type of join between parent and child tables; "parent-child" (parent primary key is the join column);
@@ -9,10 +11,6 @@
 #' @param drop_keys logical; keep join keys in merged tables
 #' 
 #' @return a list containing the parent tables with their joined attributes from the child tables
-#' 
-#' @importFrom leroy-bml/csmTools R/get_pkeys
-#' 
-#' @export
 #'
 
 merge_tbls <- function(parent_list, child_list,

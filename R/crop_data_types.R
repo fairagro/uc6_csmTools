@@ -3,6 +3,8 @@
 #' Determines whether a data table contains management data (i.e., fixed experimental parameters), observed data
 #' (i.e., parameters measured during the experiment) or other attributes (i.e., neither management nor observed data)
 #' 
+#' @export
+#'
 #' @param db a list of data frames
 #' @param years_col character string; name of the "year" column
 #' @param plots_col character string; name of the plot identifier column
@@ -11,19 +13,12 @@
 #' 
 #' @return the input database tagged as "management", "observed" or "other" data category (as attr(., "category"))
 #' 
-#' @importFrom leroy-bml/csmTools R/get_pkeys
-#' @importFrom dplyr distinct
+#' @importFrom dplyr "%>%" group_by_at summarise n_distinct across mutate ungroup select pull left_join
+#' @importFrom tidyr all_of
+#' @importFrom tibble as_tibble
 #' 
-#' @export
-#'
 
 tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
-  
-  # db = DATA_tbls
-  # years_col = YEARS_nm
-  # plots_col = PLOTS_nm
-  # plots_len = PLOTS_n
-  # max_events = 8
   
   # Tag tables independent of plots as "other" as both management and observed data are tied to the plots
   db_desc <- lapply(db, function(df){
@@ -103,18 +98,6 @@ tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
   db_out <- lapply(db_out, function(ls) Filter(Negate(is.null), ls))
 
   return(db_out)
- 
-  # df_grouped <- split(df, df[[years_col]])
-  # result <- sapply(df_grouped, nrow)
-  # result <- mean(result)
-  
-  # db_tagged <- mapply(function(df, x){
-  #   attr(df, "category") <- x
-  #   return(df)
-  # }, db, df_tags, SIMPLIFY = FALSE)
-  # 
-  # db_out <- append(db_tagged, df_desc)
-  # return(db_out)
 }
 
 #' Identify if a management type is an experimental treatment
@@ -122,18 +105,19 @@ tag_data_type <- function(db, years_col, plots_col, plots_len, max_events = 8) {
 #' Determines for each year whether a management type has different fixed value among plots within year (experimental treatment)
 #' or is uniform among plots within year.
 #' 
+#' @export
+#'
 #' @param df a data frame containing management data
 #' @param years_col character string; name of the "year" column
 #' @param plots_col character string; name of the plot identifier column
 #'  
 #' @return a data frame containing the year column and a logical "is_trt"
 #' 
-#' @importFrom leroy-bml/csmTools R/get_pkeys
-#' @importFrom dplyr group_by_at arrange mutate across c_across rowwise select n_distinct summarise
+#' @importFrom dplyr "%>%" group_by_at arrange mutate row_number across c_across rowwise select n_distinct summarise
 #' @importFrom tidyr matches all_of spread
+#' @importFrom rlang "!!" sym
 #' 
-#' @export
-#'
+
 
 is_treatment <- function(df, years_col, plots_col){
   
@@ -158,7 +142,7 @@ is_treatment <- function(df, years_col, plots_col){
     rowwise() %>%
     mutate(mngt_full = paste(c_across(all_of(management_cols)), collapse = "|")) %>%
     # Convert to wide format, i.e., year x plot matrix with management as values
-    dplyr::select(all_of(c(years_col, plots_col)), events_count, mngt_full) %>%
+    select(all_of(c(years_col, plots_col)), events_count, mngt_full) %>%
     spread(plots_col, mngt_full) %>%
     # Count the number of unique management events among plots
     rowwise() %>%

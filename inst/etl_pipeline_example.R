@@ -7,7 +7,7 @@
 #' 
 #' @importFrom stringr str_extract
 #' @importFrom readxl read_excel
-#' @importFrom dplyr select mutate relocate group_by arrange bind_rows filter if_all dense_rank desc ungroup
+#' @importFrom dplyr "%>%" select mutate relocate group_by arrange bind_rows filter if_all dense_rank desc ungroup
 #' @importFrom dplyr cur_group_id distinct where across left_join
 #' @importFrom tidyr all_of everything separate starts_with unnest
 #' @importFrom tibble as_tibble

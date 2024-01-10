@@ -6,6 +6,8 @@
 #' 
 #' @return the name of the year column
 #' 
+#' @importFrom lubridate is_date year
+#' 
 #' @export
 #'
 
@@ -28,14 +30,17 @@ get_years_col <- function(df, start, end){
 
 #' Find treatments column in a design data frame based on the years and plots column
 #' 
+#' @export
+#' 
 #' @param df a data frame
 #' @param years_col the name of the years column
 #' @param plots_col the name of the plots column
 #' 
 #' @return a list containing the name of the treatment column and the number of replicates
 #' 
-#' @export
-#'
+#' @importFrom dplyr "%>%" distinct group_by summarise pull
+#' @importFrom tidyr all_of
+#' 
 
 get_treatments_col <- function(design_tbl, years_col, plots_col){
 
@@ -45,7 +50,7 @@ get_treatments_col <- function(design_tbl, years_col, plots_col){
   cols <- setdiff(names(design_tbl), c(pkey, years_col, plots_col))
   # Drop plots and keep unique rows
   df_noplots <- design_tbl %>%
-    dplyr::select(-all_of(plots_col)) %>%
+    select(-all_of(plots_col)) %>%
     distinct()
   
   # Find column with fixed number of rows per group (i.e., number of replicates)
@@ -71,13 +76,13 @@ get_treatments_col <- function(design_tbl, years_col, plots_col){
 
 #' Find a table based on its primary key
 #' 
+#' @export
+#' 
 #' @param db a list of linked data frames
 #' @param pkey a character, the name of the focal primary key
 #' 
 #' @return a data frame with its name in the input list as an attribute
 #' 
-#' @export
-#'
 
 get_tbl <- function(db, pkey){
   

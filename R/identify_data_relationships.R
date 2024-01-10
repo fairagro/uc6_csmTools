@@ -49,18 +49,15 @@ get_pkeys <- function(df, alternates = FALSE){
 
 #' Retrieve the parent table(s) of a table
 #' 
+#' @export
+#' 
 #' @param tbl a data frame
 #' @param tbl_list a list of data frames
 #' 
 #' @return the names of the parent tables of the focal table
-#' 
-#' @export
 #'
 
 get_parent <- function(tbl, tbl_list) {
-  
-  #tbl <- ATTR_tbls$SORTE
-  #tbl_list <- ATTR_tbls
   
   cols <- colnames(tbl)
   
@@ -86,7 +83,7 @@ get_parent <- function(tbl, tbl_list) {
 #' 
 #' @param df1 the first data frame
 #' @param df2 the second data frame
-#' @param subset ###
+#' @param subset character vector containing the column names that should be considered in the evaluation
 #' 
 #' @return a logical stating whether the two data frames are dependent or not
 #' 
