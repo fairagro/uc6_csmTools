@@ -1,3 +1,11 @@
+#'
+#'
+#' @export
+#' 
+#' @importFrom magrittr "%>%"
+#' @importFrom dplyr rename
+
+
 # File X template ---------------------------------------------------------
 
 
