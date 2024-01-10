@@ -327,3 +327,24 @@ v_fmt_filet <- c(
   #UNAD = "%6s", UWAD = "%6s", UYAD = "%6s",
   `VN%D` = "%##6.0f", VNAD = "%##6.0f"
 )
+
+
+# File X sections ---------------------------------------------------------
+
+
+filex_sections <- c("GENERAL",
+                    "TREATMENTS",
+                    "CULTIVARS",
+                    "FIELDS",
+                    "SOIL_ANALYSES",
+                    "INITIAL_CONDITIONS",
+                    "PLANTING_DETAILS",
+                    "TILLAGE",
+                    "IRRIGATION",
+                    "FERTILIZERS",
+                    "RESIDUES",
+                    "CHEMICALS",
+                    "ENVIRONMENT_MODIFICATIONS",
+                    "HARVEST",
+                    "SIMULATION_CONTROLS"
+                    )
