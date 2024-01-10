@@ -1,3 +1,23 @@
+#' Example of UC6 ETL pipeline with LTE data from the Seehausen experiment, sourced from the BonaRes repository
+#' 
+#' Some parts of the pipeline are handled by generic functions, others are specific to the Seehausen LTE as a
+#' temporary workarounds (most notably data mapping steps).
+#' Additional generic worfklows will be developed at a later stage with adapted standards to handle complex 
+#' mappings.
+#' 
+#' @importFrom stringr str_extract
+#' @importFrom readxl read_excel
+#' @importFrom dplyr select mutate relocate group_by arrange bind_rows filter if_all dense_rank desc ungroup
+#' @importFrom dplyr cur_group_id distinct where across left_join
+#' @importFrom tidyr all_of everything separate starts_with unnest
+#' @importFrom tibble as_tibble
+#' @importFrom lubridate as_date year
+#' @importFrom DSSAT read_sol write_sol write_filex write_filea write_wth write_dssbatch run_dssat read_output
+#' @importFrom ggplot2 ggplot aes geom_line geom_point geom_hline labs guides guide_legend theme_bw theme
+#' @importFrom ggplot2 scale_colour_manual scale_size_manual scale_linewidth_manual
+#' @importFrom ggplot2 element_text element_blank
+#' 
+
 
 # Load data ---------------------------------------------------------------
 
@@ -81,7 +101,6 @@ seehausen_fmt <- reshape_exp_data(db = db_list, metadata = metadata, mother_tbl 
 
 
 GENERAL <- seehausen_fmt$GENERAL %>%
-  collapse_cols(., "NOTES") %>%
   mutate(SITE_NAME = paste(SITE, COUNTRY, sep = ", "))
 
 
@@ -437,10 +456,7 @@ BNR_dssat_yr <- split_by_year(BNR_dssat)
 
 # Append soil to each year (single profile for now)
 BNR_dssat_yr <- lapply(BNR_dssat_yr, function(x)
-  append(x, list(GENERAL = BNR_dssat$GENERAL,
-                 FIELDS = BNR_dssat$FIELDS,
-                 SOIL_Header = BNR_dssat$SOIL_Header,
-                 SOIL_Layers = BNR_dssat$SOIL_Layers))
+  append(x, list(GENERAL = BNR_dssat$GENERAL, FIELDS = BNR_dssat$FIELDS))
 )
 
 
@@ -448,7 +464,7 @@ BNR_dssat_yr <- lapply(BNR_dssat_yr, function(x)
 # Build FILE X ------------------------------------------------------------
 
 
-BNR_dssat_yr_filex <- lapply(BNR_dssat_yr, function(ls) {
+BNR_yr_filex <- lapply(BNR_dssat_yr, function(ls) {
   build_filex(ls,
               title = attr(BNR_dssat, "EXP_DETAILS"),
               site_code = attr(BNR_dssat, "SITE_CODE"))
@@ -459,68 +475,262 @@ BNR_dssat_yr_filex <- lapply(BNR_dssat_yr, function(ls) {
 # Build FILE A ------------------------------------------------------------
 
 
-BNR_dssat_yr_out <- lapply(BNR_dssat_yr, function(ls) {
+BNR_yr_filea <- lapply(BNR_dssat_yr, function(ls) {
   build_filea(ls,
               title = attr(BNR_dssat, "EXP_DETAILS"),
               site_code = attr(BNR_dssat, "SITE_CODE"))
 })
-
+BNR_yr_filea <- BNR_yr_filea[lengths(BNR_yr_filea) > 0]
 
 
 # Build FILE T ------------------------------------------------------------
 
 
-BNR_dssat_yr_out <- lapply(BNR_dssat_yr_out, function(ls) {
+BNR_yr_filet <- lapply(BNR_dssat_yr, function(ls) {
   build_filet(ls,
               title = attr(BNR_dssat, "EXP_DETAILS"),
               site_code = attr(BNR_dssat, "SITE_CODE"))
 })
-
+BNR_yr_filet <- BNR_yr_filet[lengths(BNR_yr_filet) > 0]
 
 
 # Build SOL FILE ----------------------------------------------------------
 
 
-BNR_dssat_yr_out <- lapply(BNR_dssat_yr_out, function(ls) build_sol(ls))
+BNR_soil <- list(SOIL_Header = BNR_dssat$SOIL_Header, SOIL_Layers = BNR_dssat$SOIL_Layers)
+BNR_sol <- build_sol(BNR_soil)
 
 
 
 # Build WTH FILE ----------------------------------------------------------
 
 
-BNR_dssat_yr_out <- mapply(function(x, y) {
+# Append weather station metadata in the comment section for each year
+BNR_dssat_yr <- mapply(function(x, y) {
   attr(x[["WEATHER_Daily"]], "comments") <- 
     c(paste0("Source data downloaded from: DWD Open Data Server on ", Sys.Date(), " with csmTools"), y)
   return(x)
-}, BNR_dssat_yr_out, WEATHER_comments)
+}, BNR_dssat_yr, WEATHER_comments)
 
-BNR_dssat_yr_out <- lapply(BNR_dssat_yr_out, function(ls) build_wth(ls))
-
+BNR_yr_wth <- lapply(BNR_dssat_yr, function(ls) build_wth(ls))
 
 
 
 # Export data -------------------------------------------------------------
 
 
-# Create a folder for each year (i.e., sublist) and export the dataframes as csv files
-dir.create(paste0("./inst/extdata/", db_name, "/1_out"))  # TODO: replace by datapath
-
-for (i in names(BNR_mapped_yr)) {
-  dir.create(paste0("./inst/extdata/", db_name, "/1_out/", i))
-
-  for (j in names(BNR_mapped_yr[[i]])) {
-    write.csv(BNR_mapped_yr[[i]][[j]], file = paste0("./inst/extdata/", db_name, "/1_out/", i, "/", j, ".csv"),
-              row.names = FALSE,
-              fileEncoding = "latin1")
-  }
+# Merge the outputs
+BNR_yr_merged <- list()
+for (i in names(BNR_yr_filex)) {
+  BNR_yr_merged[[i]] <- list(FILEX = BNR_yr_filex[[i]],
+                             FILEA = BNR_yr_filea[[i]],
+                             FILET = BNR_yr_filet[[i]],
+                             WTH = BNR_yr_wth[[i]])
 }
+
+# Drop missing tables
+BNR_yr_merged <- lapply(BNR_yr_merged, function(ls) ls[lengths(ls) > 0])
+
+# Export the data
+path <- paste0("./inst/extdata/", db_name, "/1_out")
+if (dir.exists(path) == FALSE) {
+  dir.create(path)
+}
+
+for (i in names(BNR_yr_merged)) {
+  dir.create(paste0(path, "/", i))
+  write_dssat(BNR_yr_merged[[i]], path = paste0(path, "/", i))
+}
+
+write_sol(BNR_sol, title = "General DSSAT Soil Input File", file_name = paste0(path, "/SEDE.SOL"),
+          append = FALSE)
+#TODO: generate file_name and title in the build_sol function
 
 
 
 # Simulations -------------------------------------------------------------
 
 
-#
+# Specify the location of the DSSAT CSM executable (NB: should not be built into the package)
+options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
+
+# Specify dir for simulations: input files, batch files and simulations all stored there
+old_wd <- getwd()
+sim_wd <- paste0(old_wd, "./inst/extdata/lte_seehausen/2_sim")
+setwd(sim_wd)
 
 
-# WRAPUP: reshape function; clean-up; instructions; openproject
+# ==== Input data adjustments ---------------------------------------------
+
+# Set missing required variables
+# NB: this is a temporary fix, should be done in the build functions with robust estimation methods + warning
+# (imputation sould be documented in the input files as notes)
+lteSe_1995_filex <- BNR_yr_merged$Y1995$FILEX
+lteSe_1995_filex$PLANTING_DETAILS$PLDP <- 5.5  # planting depth
+
+lteSe_1995_filex$TILLAGE$TDEP <- 
+  ifelse(lteSe_1995_filex$TILLAGE$TIMPL == "TI038", 2.5, lteSe_1995_filex$TILLAGE$TDEP)  # missing tillage depth
+lteSe_1995_filex$FERTILIZERS$FDEP <- 10  # fertilizer application depth
+
+# Add cultivar to the cultivar file
+# NB: parameter fitting script should be used eventually, for now we use a median cultivar based on the provided
+# minima and maxima for genetic parameters
+
+whaps_cul <- read_cul("C:/DSSAT48/Genotype/WHAPS048.CUL")
+
+cul_median_pars <- apply(whaps_cul[1:2, 5:ncol(whaps_cul)], 2, function(x) sum(x)/2)
+
+whaps_cul <- add_cultivar(whaps_cul,
+                          ccode = "IB9999",
+                          cname = "Borenos",
+                          ecode = "IB0001",
+                          ppars = as.numeric(cul_median_pars[1:5]),
+                          gpars = as.numeric(cul_median_pars[6:ncol(whaps_cul)])
+)
+lteSe_1995_filex$CULTIVARS$INGENO <- "IB9999"  # cultivat code in file X links to cultivar file
+
+write_cul(whaps_cul, "C:/DSSAT48/Genotype/WHAPS048.CUL")  # export the updated file
+
+
+# Set simulation controls
+
+# Simulation start date: by default at the earliest management event carried out
+all_dates <- na.omit(
+  as.POSIXct(
+    as.numeric(
+  unlist(lapply(lteSe_1995_filex, function(df) {
+    df[grepl("DAT", colnames(df))]
+  }), use.names = FALSE)
+)))
+lteSe_1995_filex$SIMULATION_CONTROLS$SDATE <- min(all_dates)
+
+# Set simulation options
+lteSe_1995_filex$SIMULATION_CONTROLS$WATER <- "Y"  # water (rain/irrigation)
+lteSe_1995_filex$SIMULATION_CONTROLS$NITRO <- "Y"  # nitrogen
+lteSe_1995_filex$SIMULATION_CONTROLS$CHEM <- "Y"  # chemicals
+lteSe_1995_filex$SIMULATION_CONTROLS$TILL <- "Y"  # tillage
+
+# Set management settings
+lteSe_1995_filex$SIMULATION_CONTROLS$FERTI <- "R"  # fertilizer application: on reported dates (R)
+lteSe_1995_filex$SIMULATION_CONTROLS$HARVS <- "R"  # harvest: on reported dates (R)
+
+# Set model (for this example we use NWheat)
+lteSe_1995_filex$SIMULATION_CONTROLS$SMODEL <- "WHAPS"  # NWheat code, from DSSAT source code
+lteSe_1995_filex$SIMULATION_CONTROLS$PHOTO <- "C"  # photosynthesis method set to canopy curve as required by NWheat
+
+# Set output files options (only growth for this example)
+lteSe_1995_filex$SIMULATION_CONTROLS$GROUT <- "Y"
+lteSe_1995_filex$SIMULATION_CONTROLS$VBOSE <- "Y"  # verbose 
+
+# Write example data files (X, A, T) in the simulation directory
+# Prototype data: seehausen LTE, year 1995 (wheat - rainfed)
+write_filex(lteSe_1995_filex, paste0(sim_wd, "/SEDE9501.WHX"))  # ignore warnings
+write_filea(BNR_yr_merged$Y1995$FILEA, paste0(sim_wd, "/SEDE9501.WHA")) 
+
+# Weather, soil and cultivar files must be located within the DSSAT CSM directory (locally installed)
+# For weather files, two years may be required if management events took place in the fall/winter preceding
+# the harvest years (typically planting/tillage)
+unique(year(all_dates))  # 1994, 1995 ==> two weather files required
+
+write_wth2(BNR_yr_merged$Y1994$WTH, "C:/DSSAT48/Weather/SEDE9401.WTH")
+write_wth2(BNR_yr_merged$Y1995$WTH, "C:/DSSAT48/Weather/SEDE9501.WTH")
+
+# Soil profile not copied as generic soil was used in this example(already in DSSAT Soil directory)
+#write_sol(BNR_yr_merged$Y1995$WTH, "C:/Program Files (x86)/DSSAT48/Soil/SEDE.SOL")  # soil profile
+
+
+# ==== Simulation runs ----------------------------------------------------
+
+# Write batch file
+batch_tbl <- data.frame(FILEX = "SEDE9501.WHX",
+                        TRTNO = 1:4,
+                        RP = 1,
+                        SQ = 0,
+                        OP = 0,
+                        CO = 0)
+
+# Write example batch file
+write_dssbatch(batch_tbl)
+
+# Run simulations
+run_dssat(run_mode = "B")
+
+setwd(old_wd)  # reset wd
+
+
+# ==== Result plots -------------------------------------------------------
+
+
+# TODO: eventually a wrapper for plotting essential results likes the obs vs. sim comparisons
+# Should link to the input data to retrieve treatment names and levels
+# Plot results: phenology
+
+lteSe_sim_growth <- read_output(file_name = "./inst/extdata/lte_seehausen/2_sim/PlantGro.OUT")
+
+# Format observed data for plotting
+lteSe_obs_growth <- BNR_yr_merged$Y1995$FILEA %>%
+  filter(TRTNO %in% 1:4) %>%
+  mutate(MDAT = as.POSIXct(as.Date(MDAT, format = "%y%j")),
+         ADAT = as.POSIXct(as.Date(ADAT, format = "%y%j")))
+
+# Plot results: yield
+lteSe_sim_growth %>%
+  mutate(TRNO = as.factor(TRNO)) %>%
+  ggplot(aes(x = DATE, y = GWAD)) +
+  # Line plot for simulated data
+  geom_line(aes(group = TRNO, colour = TRNO, linewidth = "Simulated")) +
+  # Points for observed data
+  geom_point(data = lteSe_obs_growth, aes(x = MDAT, y = HWAH, colour = as.factor(TRTNO), size = "Observed"), 
+             shape = 20) +  # obs yield at harvest
+  # General appearance
+  scale_colour_manual(name = "Fertilization (kg[N]/ha)",
+                    breaks = c("1","2","3","4"),
+                    labels = c("0","100","200","300"),
+                    values = c("#20854E","#FFDC91", "#E18727", "#BC3C29")) +
+  scale_size_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
+  scale_linewidth_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
+  labs(size = NULL, linewidth = NULL, y = "Yield (kg/ha)") +
+  guides(
+    size = guide_legend(
+      override.aes = list(linetype = c("solid", "blank"), shape = c(NA, 16))
+    )
+  ) +
+  theme_bw() + 
+  theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8),
+        axis.title.x = element_blank(), axis.title.y = element_text(size = 10),
+        axis.text = element_text(size = 9, colour = "black"))
+
+# Plot results: phenology
+lteSe_sim_growth %>%
+  mutate(TRNO = as.factor(TRNO)) %>%
+  ggplot(aes(x = DATE, y = DCCD)) +
+  # Zadoks lines for comparison
+  geom_hline(yintercept = 69, linetype = "dashed", colour = "black") +  # anthesis date (Zadoks65)
+  geom_hline(yintercept = 95, linetype = "dashed", colour = "black") +  # maturity date (Zadoks95)
+  # Line plot for simulated data
+  geom_line(aes(group = TRNO, colour = TRNO, linewidth = "Simulated")) +
+  # Points for observed data
+  geom_point(data = lteSe_obs_growth, aes(x = ADAT, y = 69, colour = as.factor(TRTNO), size = "Observed"),
+             shape = 20) +  # obs anthesis date (Zadosk65)
+  geom_point(data = lteSe_obs_growth, aes(x = MDAT, y = 95, colour = as.factor(TRTNO), size = "Observed"),
+             shape = 20) +  # obs maturity data (Zadoks95)
+  # General appearance
+  scale_colour_manual(name = "Fertilization (kg[N]/ha)",
+                      breaks = c("1","2","3","4"),
+                      labels = c("0","100","200","300"),
+                      values = c("#20854E","#FFDC91", "#E18727", "#BC3C29")) +
+  scale_size_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
+  scale_linewidth_manual(values = c("Simulated" = 1, "Observed" = 2), limits = c("Simulated", "Observed")) +
+  labs(size = NULL, linewidth = NULL, y = "Zadoks scale") +
+  guides(
+    size = guide_legend(
+      override.aes = list(linetype = c("solid", "blank"), shape = c(NA, 16))
+    )
+  ) +
+  theme_bw() + 
+  theme(legend.text = element_text(size = 8), legend.title = element_text(size = 8),
+        axis.title.x = element_blank(), axis.title.y = element_text(size = 10),
+        axis.text = element_text(size = 9, colour = "black"))
+
+# Results are off, but it works!
+
