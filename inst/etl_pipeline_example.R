@@ -18,6 +18,12 @@
 #' @importFrom ggplot2 element_text element_blank
 #' 
 
+# Load libraries ----------------------------------------------------------
+
+# All libraries should be installed first. Check the NAMESPACE package for the list.
+source("./R/temp_library_calls.R")
+
+
 # Load data ---------------------------------------------------------------
 
 

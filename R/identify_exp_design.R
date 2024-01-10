@@ -56,11 +56,12 @@ get_treatments_col <- function(design_tbl, years_col, plots_col){
   # Find column with fixed number of rows per group (i.e., number of replicates)
   trt_col <- NULL
   reps_n <- NULL
+  years_n <-  length(unique(design_tbl[[years_col]]))
   for (i in cols) {
     
-    reps <- design_noplots %>%
+    reps <- df_noplots %>%
       group_by(.[[i]]) %>% 
-      summarise(n = n()/ YEARS_n) %>%
+      summarise(n = n()/ years_n) %>%
       pull(n)
     
     if(length(unique(reps))==1){
