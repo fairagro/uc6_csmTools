@@ -1,6 +1,3 @@
-#' !!Fork DSSAT package on github
-
-
 # File X template ---------------------------------------------------------
 
 
