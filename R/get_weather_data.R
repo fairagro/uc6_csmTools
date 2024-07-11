@@ -403,7 +403,7 @@ impute_weather <- function(df, na.rm = TRUE, rule = 2) {
 #' @importFrom dplyr "%>%" distinct mutate select group_by summarise pull relocate
 #' @importFrom tidyr unnest drop_na all_of everything
 #' @importFrom tibble rownames_to_column
-#' @importFrom purr map2
+#' @importFrom purrr map2
 #' @importFrom lubridate month
 #' 
 
