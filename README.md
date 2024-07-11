@@ -16,6 +16,8 @@ csmTools aims to facilitate the ETL process for crop modelers by offering functi
 Currently, available functions have been developed based on a prototype dataset [Seehausen Long-term Fertilization Experiment](https://doi.org/10.20387/bonares-3nqn-41vn) published on the [BonaRes Repository](https://www.bonares.de/research-data). T
 The ETL process can be chiefly divided into four steps: (1) data identification and reshaping, (2) variable mapping, (3) data transformation into model input, and (4) simulation and visualization.
 
+## Installation
+The package used [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call `renv::restore()` from an R command prompt. Linux users may need to execute `install.sh` to install required apt packages.
 
 ## Test script
 A [test script](inst/etl_pipeline_example.R) allows to run the entire pipeline, from raw data to simulation output, on the example data.
