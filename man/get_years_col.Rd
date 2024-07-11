@@ -15,6 +15,7 @@ get_years_col(df, start, end)
 }
 \value{
 the name of the year column
+is_date is from etl_utils.R
 }
 \description{
 Find years column in a design data frame based on temporal coverage metadata

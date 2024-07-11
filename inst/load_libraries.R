@@ -6,7 +6,6 @@ library(units)
 library(purrr)
 library(dplyr)
 library(tidyr)
-library(tidyverse)
 library(stringr)
 library(lubridate)
 library(rdwd)
@@ -49,7 +48,7 @@ source("./R/estimate_phenology.R")
 
 load(file = "./data/wth_data_maps.Rda")
 load(file = "./data/icasa_dssat.Rda")
-load(file = "./data/bnr_seehausen_icasa.Rda")
+load(file = "./data/BnR_seehausen_icasa.Rda")
 
 
 
