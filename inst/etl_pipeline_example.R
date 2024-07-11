@@ -571,7 +571,7 @@ if(.Platform$OS.type == "unix"){
   dssat_dir <- "~/dssat-csm-os/build/bin/"
 }
 
-old_wd <- getwd()
+old_wd <- paste0(getwd(), "/") # trailing slash to avoid path issues
 sim_wd <- paste0(old_wd, "./inst/extdata/lte_seehausen/2_sim")
 setwd(sim_wd)
 
