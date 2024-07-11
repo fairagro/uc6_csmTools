@@ -22,26 +22,7 @@ library(DSSAT)
 library(rlang)
 library(countrycode)
 library(ggplot2)
-
-
-# Package functions -------------------------------------------------------
-
-
-source("./R/crop_data_types.R")
-source("./R/etl_utils.R")
-source("./R/get_weather_data.R")
-source("./R/identify_data_relationships.R")
-source("./R/identify_exp_design.R")
-source("./R/merge_tbls.R")
-source("./R/reshape_exp_data.R")
-source("./R/read_metadata.R")
-source("./R/map_data.R")
-source("./R/format_dssat.R")
-source("./R/edit_dssat.R")
-source("./R/dssat_file_templates.R")
-source("./R/estimate_phenology.R")
-
-
+library(csmTools)
 
 # Package data ------------------------------------------------------------
 

@@ -1,6 +1,8 @@
 Package: csmTools
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
+Author: Benjamin Leroy
+Maintainer: Benjamin Leroy <benjamin.leroy@tum.de>
 Authors@R: 
     person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
@@ -8,5 +10,26 @@ Description: What the package does (one paragraph).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
+Imports:
+    DSSAT,
+    OSMscale, 
+    countrycode, 
+    cropCalendars, 
+    dplyr,
+    lubridate, 
+    magrittr, 
+    purrr, 
+    rdwd, 
+    readODS, 
+    readxl,
+    rlang, 
+    soilDB, 
+    spsUtil, 
+    stringr, 
+    tibble, 
+    tidyr, 
+    units,
+    xml2, 
+    zoo
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

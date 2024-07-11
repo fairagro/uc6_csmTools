@@ -25,8 +25,6 @@
 
 # Load libraries, internal data (e.g., vocabularies and maps), and internal functions
 source("./inst/load_libraries.R")
-
-
 # Load data ---------------------------------------------------------------
 
 
