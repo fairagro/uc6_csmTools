@@ -17,7 +17,7 @@ Currently, available functions have been developed based on a prototype dataset 
 The ETL process can be chiefly divided into four steps: (1) data identification and reshaping, (2) variable mapping, (3) data transformation into model input, and (4) simulation and visualization.
 
 ## Installation
-The package used [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call `renv::restore()` from an R command prompt. Linux users may need to execute `install.sh` to install required apt packages.
+The package uses [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call `renv::restore()` from an R command prompt. Linux users may need to execute `install.sh` to install required apt packages.
 
 ## Test script
 A [test script](inst/etl_pipeline_example.R) allows to run the entire pipeline, from raw data to simulation output, on the example data.
