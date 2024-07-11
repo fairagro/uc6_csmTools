@@ -562,9 +562,15 @@ write_sol(BNR_sol, title = "General DSSAT Soil Input File", file_name = paste0(p
 
 # Specify the location of the DSSAT CSM executable (NB: should not be built into the package)
 options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
-options(DSSAT.CSM = "~/dssat-csm-os/build/bin/dscsm048")
 # Specify dir for simulations: input files, batch files and simulations all stored there
 dssat_dir <- "C:/DSSAT48"
+
+# For Unix systems
+if(.Platform$OS.type == "unix"){
+  options(DSSAT.CSM = "~/dssat-csm-os/build/bin/dscsm048") # still hardcoded :(
+  dssat_dir <- "~/dssat-csm-os/build/bin/"
+}
+
 old_wd <- getwd()
 sim_wd <- paste0(old_wd, "./inst/extdata/lte_seehausen/2_sim")
 setwd(sim_wd)

@@ -825,15 +825,20 @@
     },
     "rdwd": {
       "Package": "rdwd",
-      "Version": "1.8.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "1.8.10",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "rdwd",
+      "RemoteUsername": "brry",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "480db714771a1e7e4b2e73026423e00fa358bcd3",
       "Requirements": [
         "R",
         "berryFunctions",
         "pbapply"
       ],
-      "Hash": "e6c233ac5d0bc3496ee198f197ede0b0"
+      "Hash": "e05c7bc90796d8d463f8a4ab18d3b4c1"
     },
     "readODS": {
       "Package": "readODS",
@@ -896,6 +901,20 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "cbff1b666c6fa6d21202f07e2318d4f1"
+    },
+    "remotes": {
+      "Package": "remotes",
+      "Version": "2.5.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "methods",
+        "stats",
+        "tools",
+        "utils"
+      ],
+      "Hash": "3ee025083e66f18db6cf27b56e23e141"
     },
     "renv": {
       "Package": "renv",
