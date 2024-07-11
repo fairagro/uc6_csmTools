@@ -203,7 +203,6 @@ download_dwd <- function(
                          per = station[i, ]$per,
                          var = station[i, ]$var)
         data <- dataDWD(url, read = TRUE, dir = dir, quiet = TRUE)
-        
         # Append station metadata for later reuse
         metadata <- list(var = x,
                          res = station[i, ]$res,

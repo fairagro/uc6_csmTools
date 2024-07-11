@@ -22,7 +22,6 @@ library(DSSAT)
 library(rlang)
 library(countrycode)
 library(ggplot2)
-library(csmTools)
 
 # Package data ------------------------------------------------------------
 

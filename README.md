@@ -18,6 +18,7 @@ The ETL process can be chiefly divided into four steps: (1) data identification 
 
 ## Installation
 The package uses [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call `renv::restore()` from an R command prompt. Linux users may need to execute `install.sh` to install required apt packages.
+To install the csmTools package exexute `remotes::install_local(".")` or `remotes::install_github("fairagro/uc6_csmTools")` in an R command prompt
 
 ## Test script
 A [test script](inst/etl_pipeline_example.R) allows to run the entire pipeline, from raw data to simulation output, on the example data.

@@ -24,7 +24,10 @@
 #source("./inst/install_libraries.R")
 
 # Load libraries, internal data (e.g., vocabularies and maps), and internal functions
+try(detach("package:csmTools", unload=TRUE)) # dev only, only install once in prod!
 source("./inst/load_libraries.R")
+remotes::install_local("./", force = TRUE)
+library(csmTools)
 # Load data ---------------------------------------------------------------
 
 
@@ -559,7 +562,7 @@ write_sol(BNR_sol, title = "General DSSAT Soil Input File", file_name = paste0(p
 
 # Specify the location of the DSSAT CSM executable (NB: should not be built into the package)
 options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
-
+options(DSSAT.CSM = "~/dssat-csm-os/build/bin/dscsm048")
 # Specify dir for simulations: input files, batch files and simulations all stored there
 dssat_dir <- "C:/DSSAT48"
 old_wd <- getwd()

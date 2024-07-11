@@ -1,11 +1,21 @@
 {
 	"name": "R (rocker/r-ver base)",
 	"image": "ghcr.io/rocker-org/devcontainer/r-ver:4.4",
-	"customizations": {
-		"vscode": {
-			"extensions": [
-				"REditorSupport.r"
+	"features": {
+		"ghcr.io/devcontainers-contrib/features/apt-packages:1": {
+			"packages": [
+				"libudunits2-dev",
+				"default-jdk",
+				"libproj-dev",
+				"libgdal-dev",
+				"cmake"
 			]
-		}
+		},
+		"ghcr.io/rocker-org/devcontainer-features/renv-cache:0": {}
+	},
+	"onCreateCommand": "R -e 'install.packages(c(\"renv\", \"languageserver\", \"devtools\"))'",
+	"postCreateCommand": {
+		"renv.restore": "R -e 'renv::restore()'",
+		"dssat.build": "git clone https://github.com/DSSAT/dssat-csm-os ~/dssat-csm-os && mkdir ~/dssat-csm-os/build && cd ~/dssat-csm-os/build && cmake .. && make"
 	}
 }

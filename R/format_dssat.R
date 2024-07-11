@@ -429,6 +429,12 @@ write_wth2 <- function(wth, file_name) {
   write_wth(wth = wth, file_name = file_name, force_std_fmt = FALSE)
 }
 
+#' TODO: Needs documentation!
+#' 
+#' @export 
+#' 
+#' @importFrom purrr walk
+#' 
 write_dssat <- function(ls, path = getwd()) {
   
   # Write functions (from DSSAT package)
