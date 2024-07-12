@@ -17,7 +17,8 @@ Currently, available functions have been developed based on a prototype dataset 
 The ETL process can be chiefly divided into four steps: (1) data identification and reshaping, (2) variable mapping, (3) data transformation into model input, and (4) simulation and visualization.
 
 ## Installation
-The package uses [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call `renv::restore()` from an R command prompt. Linux users may need to execute `install_requirements.sh` to install required apt packages.
+The package uses [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call `renv::restore()` from an R command prompt. Linux users may need to execute `install_requirements.sh` to install required apt packages. If you need to install DSSAT there is a `install_dssat.sh` to clone and build the package on Linux. Windows Users can just use DSSATs installer.
+
 To install the csmTools package exexute `remotes::install_local(".")` or `remotes::install_github("fairagro/uc6_csmTools")` in an R command prompt
 
 ## Test script
