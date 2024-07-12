@@ -568,7 +568,7 @@ dssat_dir <- "C:/DSSAT48"
 # For Unix systems
 if(.Platform$OS.type == "unix"){
   options(DSSAT.CSM = "~/dssat-csm-os/build/bin/dscsm048") # still hardcoded :(
-  dssat_dir <- "~/dssat-csm-os/build/bin/"
+  dssat_dir <- "~/dssat-csm-os/Data/" # needs to be data when the package is built from source
 }
 
 old_wd <- paste0(getwd(), "/") # trailing slash to avoid path issues
