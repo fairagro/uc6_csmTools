@@ -831,7 +831,7 @@
       "RemoteHost": "api.github.com",
       "RemoteRepo": "rdwd",
       "RemoteUsername": "brry",
-      "RemoteRef": "HEAD",
+      "RemoteRef": "master",
       "RemoteSha": "480db714771a1e7e4b2e73026423e00fa358bcd3",
       "Requirements": [
         "R",
