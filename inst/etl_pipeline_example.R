@@ -567,8 +567,8 @@ dssat_dir <- "C:/DSSAT48"
 
 # For Unix systems
 if(.Platform$OS.type == "unix"){
-  options(DSSAT.CSM = "~/dssat-csm-os/build/bin/dscsm048") # still hardcoded :(
-  dssat_dir <- "~/dssat-csm-os/Data/" # needs to be data when the package is built from source
+  options(DSSAT.CSM = paste0(Sys.getenv("HOME"), "/dssat-csm-os/build/bin/dscsm048")) # still hardcoded :(
+  dssat_dir <- paste0(Sys.getenv("HOME"), "/dssat-csm-os/build/bin/")
 }
 
 old_wd <- paste0(getwd(), "/") # trailing slash to avoid path issues
@@ -596,13 +596,13 @@ whaps_cul <- read_cul(paste0(dssat_dir, "/Genotype/WHAPS048.CUL"))
 
 cul_median_pars <- apply(whaps_cul[1:2, 5:ncol(whaps_cul)], 2, function(x) sum(x)/2)
 
-whaps_cul <- add_cultivar(whaps_cul,  # if the cultivar is still in the file (error) just ignore and move on
-                          ccode = "IB9999",
+try(whaps_cul <- add_cultivar(whaps_cul,  # if the cultivar is still in the file (error) just ignore and move on 
+                          ccode = "IB9999", 
                           cname = "Borenos",
                           ecode = "IB0001",
                           ppars = as.numeric(cul_median_pars[1:5]),
-                          gpars = as.numeric(cul_median_pars[6:ncol(whaps_cul)])
-)
+                          gpars = as.numeric(cul_median_pars[6:ncol(whaps_cul)]))
+) # errored as commented, just wrap into a try() function
 lteSe_1995_filex$CULTIVARS$INGENO <- "IB9999"  # cultivat code in file X links to cultivar file
 
 write_cul(whaps_cul, paste0(dssat_dir, "/Genotype/WHAPS048.CUL"))  # export the updated file
@@ -652,7 +652,7 @@ write_wth2(BNR_yr_merged$Y1994$WTH, paste0(dssat_dir, "/Weather/SEDE9401.WTH"))
 write_wth2(BNR_yr_merged$Y1995$WTH, paste0(dssat_dir, "/Weather/SEDE9501.WTH"))
 
 # Soil profile not copied as generic soil was used in this example(already in DSSAT Soil directory)
-#write_sol(BNR_yr_merged$Y1995$WTH, "C:/Program Files (x86)/DSSAT48/Soil/SEDE.SOL")  # soil profile
+#write_sol(BNR_yr_merged$Y1995$WTH, paste0(sim_wd, "Soil/SEDE.SOL"))  # soil profile
 
 
 # ==== Simulation runs ----------------------------------------------------
@@ -667,7 +667,6 @@ batch_tbl <- data.frame(FILEX = "SEDE9501.WHX",
 
 # Write example batch file
 write_dssbatch(batch_tbl)
-
 # Run simulations
 run_dssat(run_mode = "B")
 
