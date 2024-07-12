@@ -9,7 +9,7 @@
 				"libproj-dev",
 				"libgdal-dev",
 				"cmake"
-			]
+			] //can also be done by using install.requirements.sh
 		},
 		"ghcr.io/rocker-org/devcontainer-features/renv-cache:0": {}
 	},
