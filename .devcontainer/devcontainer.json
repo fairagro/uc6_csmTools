@@ -13,9 +13,9 @@
 		},
 		"ghcr.io/rocker-org/devcontainer-features/renv-cache:0": {}
 	},
-	"onCreateCommand": "R -e 'install.packages(c(\"renv\", \"languageserver\", \"devtools\"))'",
+	"onCreateCommand": "R -e 'install.packages(c(\"renv\", \"languageserver\", \"devtools\"))' && R -e 'options(renv.download.override = utils::download.file)'",
 	"postCreateCommand": {
-		"renv.restore": "R -e 'renv::restore()'",
-		"dssat.install": "chmod +x ./install_dssat.sh && ./install_dssat.sh"
+		"dssat.install": "chmod +x ./install_dssat.sh && ./install_dssat.sh",
+		"renv.restore": "R -e 'renv::restore()'"
 	}
 }
