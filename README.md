@@ -17,12 +17,29 @@ Currently, available functions have been developed based on a prototype dataset 
 The ETL process can be chiefly divided into four steps: (1) data identification and reshaping, (2) variable mapping, (3) data transformation into model input, and (4) simulation and visualization.
 
 ## Installation
-The package uses [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call `renv::restore()` from an R command prompt. Linux users may need to execute `install_requirements.sh` to install required apt packages. If you need to install DSSAT there is a `install_dssat.sh` to clone and build the package on Linux. Windows Users can just use DSSATs installer.
+The package uses [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call 
+```R
+renv::restore()
+```
+from an R command prompt. Linux users may need to execute `install_requirements.sh` to install required apt packages. If you need to install DSSAT there is a `install_dssat.sh` to clone and build the package on Linux. Windows Users can just use DSSATs installer. 
+> [!WARNING]
+> Currently the pipeline does not work with the latest DSSAT Version 4.8.2.12 ...
 
-To install the csmTools package exexute `remotes::install_local(".")` or `remotes::install_github("fairagro/uc6_csmTools")` in an R command prompt
+To install the csmTools package exexute 
+```R
+remotes::install_local(".")
+```
+or 
+```R
+remotes::install_github("fairagro/uc6_csmTools")
+``` 
+in an R command prompt
 
 ## Test script
 A [test script](inst/etl_pipeline_example.R) allows to run the entire pipeline, from raw data to simulation output, on the example data.
+```bash
+Rscript inst/etl_pipeline_example.R 
+```
 
 ### Data sources
 All [raw data](inst/extdata/lte_seehausen/0_raw), [model inputs](inst/extdata/lte_seehausen/1_out), and [model outputs](inst/extdata/lte_seehausen/1_sim) can be found in the [external data folder](inst/extdata/lte_seehausen).

@@ -22,7 +22,7 @@
     },
     "DSSAT": {
       "Package": "DSSAT",
-      "Version": "0.0.9",
+      "Version": "0.0.8",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [

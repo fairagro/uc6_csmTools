@@ -567,8 +567,8 @@ dssat_dir <- "C:/DSSAT48"
 
 # For Unix systems
 if(.Platform$OS.type == "unix"){
-  options(DSSAT.CSM = paste0(Sys.getenv("HOME"), "/dssat-csm-os/build/bin/dscsm048")) # still hardcoded :(
-  dssat_dir <- paste0(Sys.getenv("HOME"), "/dssat-csm-os/build/bin/")
+  options(DSSAT.CSM = paste0(Sys.getenv("HOME"), "/dssat/dscsm048")) # still hardcoded :(
+  dssat_dir <- paste0(Sys.getenv("HOME"), "/dssat/")
 }
 
 old_wd <- paste0(getwd(), "/") # trailing slash to avoid path issues
