@@ -35,10 +35,19 @@ remotes::install_github("fairagro/uc6_csmTools")
 ``` 
 in an R command prompt
 
+If you use Visual Studio Code you can just load the Devcontainer to have an already set up development enviroment.
+
 ## Test script
 A [test script](inst/etl_pipeline_example.R) allows to run the entire pipeline, from raw data to simulation output, on the example data.
 ```bash
 Rscript inst/etl_pipeline_example.R 
+```
+You can also run the pipeline using Docker and the provided Dockerfile and later on copy files with `docker cp`.
+```bash
+docker build . -t uc6_image
+docker run uc6_image --name uc6_container
+docker start uc6_container
+docker cp uc6_container:/uc6_csmTools/Rplots.pdf ./Rplots.pdf
 ```
 
 ### Data sources
