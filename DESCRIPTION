@@ -11,7 +11,6 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
 LazyData: true
-Depends: R ( >= 3.5.0)
 Imports:
     DSSAT (== 0.0.8),
     OSMscale,
