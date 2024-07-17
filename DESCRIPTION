@@ -11,26 +11,27 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
 LazyData: true
+Depends: R ( >= 3.5.0)
 Imports:
-    DSSAT,
-    OSMscale, 
-    countrycode, 
-    cropCalendars, 
+    DSSAT (== 0.0.8),
+    OSMscale,
+    countrycode,
+    cropCalendars,
     dplyr,
-    lubridate, 
-    magrittr, 
-    purrr, 
-    rdwd, 
-    readODS, 
+    lubridate,
+    magrittr,
+    purrr,
+    rdwd,
+    readODS,
     readxl,
-    rlang, 
-    soilDB, 
-    spsUtil, 
-    stringr, 
-    tibble, 
-    tidyr, 
+    rlang,
+    soilDB,
+    spsUtil,
+    stringr,
+    tibble,
+    tidyr,
     units,
-    xml2, 
+    xml2,
     zoo
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
