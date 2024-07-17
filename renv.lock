@@ -24,7 +24,7 @@
       "Package": "DSSAT",
       "Version": "0.0.8",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "dplyr",
         "glue",
@@ -40,7 +40,7 @@
         "tidyselect",
         "utils"
       ],
-      "Hash": "8e938a5614dee6a96e2961b280db5ab5"
+      "Hash": "38b4a31c3832bad3fd677b7e06328248"
     },
     "KernSmooth": {
       "Package": "KernSmooth",
@@ -838,7 +838,7 @@
         "berryFunctions",
         "pbapply"
       ],
-      "Hash": "e05c7bc90796d8d463f8a4ab18d3b4c1"
+      "Hash": "742e68562150feb47ae006451a6ad78d"
     },
     "readODS": {
       "Package": "readODS",
