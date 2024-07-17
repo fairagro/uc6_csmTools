@@ -11,8 +11,29 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
 LazyData: true
+Depends: 
+    DSSAT (<= 0.0.8),
+    OSMscale,
+    countrycode,
+    cropCalendars,
+    dplyr,
+    lubridate,
+    magrittr,
+    purrr,
+    rdwd,
+    readODS,
+    readxl,
+    rlang,
+    soilDB,
+    spsUtil,
+    stringr,
+    tibble,
+    tidyr,
+    units,
+    xml2,
+    zoo
 Imports:
-    DSSAT (== 0.0.8),
+    DSSAT (<= 0.0.8),
     OSMscale,
     countrycode,
     cropCalendars,
