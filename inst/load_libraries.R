@@ -26,9 +26,9 @@ library(ggplot2)
 # Package data ------------------------------------------------------------
 
 
-load(file = "./data/wth_data_maps.Rda")
-load(file = "./data/icasa_dssat.Rda")
-load(file = "./data/BnR_seehausen_icasa.Rda")
+load(file = "./data/wth_data_maps.Rdata")
+load(file = "./data/icasa_dssat.Rdata")
+load(file = "./data/BnR_seehausen_icasa.Rdata")
 
 
 
