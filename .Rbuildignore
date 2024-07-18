@@ -2,3 +2,5 @@
 ^renv\.lock$
 ^.devcontainer
 install.sh
+install_*.sh
+Dockerfile
