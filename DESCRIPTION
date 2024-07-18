@@ -11,32 +11,18 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
 LazyData: true
+SystemRequirements:
+    libudunits2-dev
+    default-jdk
+    libproj-dev
+    libgdal-dev
 Depends: 
-    DSSAT (<= 0.0.8),
-    OSMscale,
-    countrycode,
-    cropCalendars,
-    dplyr,
-    lubridate,
-    magrittr,
-    purrr,
-    rdwd,
-    readODS,
-    readxl,
-    rlang,
-    soilDB,
-    spsUtil,
-    stringr,
-    tibble,
-    tidyr,
-    units,
-    xml2,
-    zoo
+    R (>= 3.5.0)
 Imports:
-    DSSAT (<= 0.0.8),
+    DSSAT,
     OSMscale,
-    countrycode,
     cropCalendars,
+    countrycode,
     dplyr,
     lubridate,
     magrittr,
@@ -53,5 +39,9 @@ Imports:
     units,
     xml2,
     zoo
+Remotes:    
+    AgMIP-GGCMI/cropCalendars,
+    brry/rdwd,
+    palderman/DSSAT@v0.0.8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
