@@ -400,7 +400,8 @@ SOIL_generic <- read_sol(file_name = "./inst/extdata/SOIL.SOL", id_soil = "IB000
 
 # Generic soils are already in DSSAT format. For now we are using vMapper and the AgMIP translators
 # so we will map them to ICASA to handle the entire dataset at once
-SOIL_dssat_icasa <- read.csv("./data/soil_dssat_icasa.csv", fileEncoding = "latin1", sep=";")
+SOIL_dssat_icasa <- soil_dssat_icasa # loaded with package
+#read.csv("./data/.soil_dssat_icasa.csv", fileEncoding = "latin1", sep=",") # could also use from data() as "soil_dssat_icasa"
 
 for (i in seq_along(colnames(SOIL_generic))) {
   for (j in 1:nrow(SOIL_dssat_icasa)){
