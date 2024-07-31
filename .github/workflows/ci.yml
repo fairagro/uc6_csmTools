@@ -18,13 +18,21 @@ jobs:
         with:
           r-version: 4.4
       - uses: actions/checkout@v4
-      - name: install package
+      - name: Install Systemrequirements
+        run: ./install_requirements.sh
+      - name: Download and Compile DSSAT
+        run: ./install_dssat.sh
+      - name: Install devtools
         run:  R -e 'install.packages("devtools")'
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      - name: install package
+      - name: Install csmTools Package
         run:  R -e 'devtools::install_local(".")'          
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      - name: test package
+      - name: Run ETL Pipeline
+        run: Rscript inst/etl_pipeline_example.R      
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      - name: Test Output
         run: R -e 'devtools::test()'
