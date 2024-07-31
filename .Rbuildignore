@@ -1,6 +1,7 @@
 ^renv$
 ^renv\.lock$
 ^.devcontainer
-install.sh
-install_*.sh
+install_dssat.sh
+install_rdeps.sh
+install_requirements.sh
 Dockerfile
