@@ -25,8 +25,8 @@
 
 # Load libraries, internal data (e.g., vocabularies and maps), and internal functions
 try(detach("package:csmTools", unload=TRUE)) # dev only, only install once in prod!
-source("./inst/load_libraries.R")
 remotes::install_local("./", force = TRUE)
+source("./inst/load_libraries.R")
 library(csmTools)
 # Load data ---------------------------------------------------------------
 
@@ -561,15 +561,22 @@ write_sol(BNR_sol, title = "General DSSAT Soil Input File", file_name = paste0(p
 # Simulations -------------------------------------------------------------
 
 
-# Specify the location of the DSSAT CSM executable (NB: should not be built into the package)
-options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
-# Specify dir for simulations: input files, batch files and simulations all stored there
-dssat_dir <- "C:/DSSAT48"
+# Specify the location of the DSSAT CSM executable (can be passed as environment variable)
+if (Sys.getenv("DSSAT_CSM") != "") {
+  dssat_exe <- Sys.getenv("DSSAT_CSM")
+  dssat_dir <- dirname(dssat_exe)
+  options(DSSAT.CSM = dssat_exe)
+} else {
+  # use default windows dir
+  options(DSSAT.CSM = "C:\\DSSAT48\\DSCSM048.EXE")
+    # Specify dir for simulations: input files, batch files and simulations all stored there
+  dssat_dir <- "C:/DSSAT48"
 
-# For Unix systems
-if(.Platform$OS.type == "unix"){
-  options(DSSAT.CSM = paste0(Sys.getenv("HOME"), "/dssat/dscsm048")) # still hardcoded :(
-  dssat_dir <- paste0(Sys.getenv("HOME"), "/dssat/")
+    # For Unix systems use home dir as default
+  if(.Platform$OS.type == "unix"){
+      options(DSSAT.CSM = paste0(Sys.getenv("HOME"), "/dssat/dscsm048")) # still hardcoded :(
+      dssat_dir <- paste0(Sys.getenv("HOME"), "/dssat/")
+  }
 }
 
 old_wd <- paste0(getwd(), "/") # trailing slash to avoid path issues
@@ -606,7 +613,7 @@ try(whaps_cul <- add_cultivar(whaps_cul,  # if the cultivar is still in the file
 ) # errored as commented, just wrap into a try() function
 lteSe_1995_filex$CULTIVARS$INGENO <- "IB9999"  # cultivat code in file X links to cultivar file
 
-write_cul(whaps_cul, paste0(dssat_dir, "/Genotype/WHAPS048.CUL"))  # export the updated file
+write_cul(whaps_cul, "WHAPS048.CUL")  # export the updated file
 
 
 # Set simulation controls
@@ -641,16 +648,16 @@ lteSe_1995_filex$SIMULATION_CONTROLS$VBOSE <- "Y"  # verbose
 
 # Write example data files (X, A, T) in the simulation directory
 # Prototype data: seehausen LTE, year 1995 (wheat - rainfed)
-write_filex(lteSe_1995_filex, paste0(sim_wd, "/SEDE9501.WHX"))  # ignore warnings
-write_filea(BNR_yr_merged$Y1995$FILEA, paste0(sim_wd, "/SEDE9501.WHA")) 
+write_filex(lteSe_1995_filex, "SEDE9501.WHX") # ignore warnings
+write_filea(BNR_yr_merged$Y1995$FILEA, "SEDE9501.WHA")
 
 # Weather, soil and cultivar files must be located within the DSSAT CSM directory (locally installed)
 # For weather files, two years may be required if management events took place in the fall/winter preceding
 # the harvest years (typically planting/tillage)
 unique(year(all_dates))  # 1994, 1995 ==> two weather files required
 
-write_wth2(BNR_yr_merged$Y1994$WTH, paste0(dssat_dir, "/Weather/SEDE9401.WTH"))
-write_wth2(BNR_yr_merged$Y1995$WTH, paste0(dssat_dir, "/Weather/SEDE9501.WTH"))
+write_wth2(BNR_yr_merged$Y1994$WTH, "SEDE9401.WTH")
+write_wth2(BNR_yr_merged$Y1995$WTH, "SEDE9501.WTH")
 
 # Soil profile not copied as generic soil was used in this example(already in DSSAT Soil directory)
 #write_sol(BNR_yr_merged$Y1995$WTH, paste0(sim_wd, "Soil/SEDE.SOL"))  # soil profile
