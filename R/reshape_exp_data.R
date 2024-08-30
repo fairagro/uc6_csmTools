@@ -20,7 +20,7 @@
 #'
 
 reshape_exp_data <- function(db, metadata, mother_tbl) {
-
+  
   # Identify the components of the experimental design ----------------------
   
   

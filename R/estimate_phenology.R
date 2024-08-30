@@ -21,7 +21,7 @@
 #' 
 #' @importFrom cropCalendars calcMonthlyClimate calcCropCalendars
 #' @importFrom dplyr "%>%" filter
-#' @importFrom lubridate as_date ymd
+#' @importFrom lubridate as_date ymd leap_year
 #' 
 
 

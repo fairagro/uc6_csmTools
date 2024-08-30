@@ -13,7 +13,7 @@
 is_date <- function(x) {
   
   # Convert all dates in DSSAT format %Y%j into usable formats
-  if (is.numeric(x) & all(nchar(as.character(x)) == 5)) {
+  if (is.integer(x) & all(nchar(as.character(x)) == 5)) {
     
     x <- format(as.Date(as.character(x), format = "%y%j"), "%Y-%m-%d")
   }

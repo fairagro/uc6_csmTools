@@ -338,6 +338,20 @@ WEATHER_raw  <- get_weather(
   max_radius = c(50, 10, 50, 20, 20, 20)
 )
 
+# # 
+# WEATHER_example <- get_weather(
+#   lat = unique(FIELDS$FL_LAT),
+#   lon = unique(FIELDS$FL_LON),
+#   years = c(2019, 2020),
+#   src = "dwd",
+#   map_to = "icasa",
+#   vars = c("air_temperature", "precipitation", "solar_radiation", "dewpoint", "relative_humidity", "wind_speed"),
+#   res = c("hourly", "hourly", "hourly", "hourly", "hourly", "hourly"),
+#   max_radius = c(50, 10, 50, 20, 20, 20)
+# )
+
+
+
 #' This might take 5-10 minutes to run
 #' rdwd downloads DWD data files into tempdir() before they are loaded into the environment
 #' You can clear tempdir() with the following function:
@@ -419,7 +433,7 @@ SOIL_Layers <- unnest(SOIL_generic[21:ncol(SOIL_generic)],
   relocate(SOIL_ID, .before = everything())
 
 #
-BNR_mapped$SOIL_Layers <- SOIL_Layers  # TODO: ?integrate weather mapping with other data?
+BNR_mapped$SOIL_Layers <- SOIL_Layers
 BNR_mapped$SOIL_Header <- SOIL_Header
 
 
