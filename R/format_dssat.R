@@ -106,12 +106,13 @@ split_by_year <- function(ls) {
 #' 
 #' @return a data frame; a formatted DSSAT input table
 #' 
+#' lubridate as.POSIXct\ # is part of base now
 #' @importFrom dplyr "%>%" bind_rows select slice arrange
 #' @importFrom tidyr all_of
 #' @importFrom purrr map map_lgl
-#' @importFrom lubridate as.POSIXct
 #' @importFrom DSSAT as_DSSAT_tbl
-#'
+#' 
+#' 
 
 format_table <- function(df, template) {
   
@@ -428,6 +429,12 @@ write_wth2 <- function(wth, file_name) {
   write_wth(wth = wth, file_name = file_name, force_std_fmt = FALSE)
 }
 
+#' TODO: Needs documentation!
+#' 
+#' @export 
+#' 
+#' @importFrom purrr walk
+#' 
 write_dssat <- function(ls, path = getwd()) {
   
   # Write functions (from DSSAT package)

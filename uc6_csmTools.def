@@ -1,0 +1,25 @@
+BootStrap: docker
+From: rocker/r-ver:4.4
+
+%files 
+    install_dssat.sh /install_dssat.sh
+
+%environment
+    export DSSAT_CSM=/usr/local/dssat/dscsm048
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    
+%post
+    apt-get update
+    apt-get install -y \
+                        libudunits2-dev \
+                        default-jdk \
+                        libproj-dev \
+                        libgdal-dev \
+                        cmake \
+                        git
+    ./install_dssat.sh /usr/local/dssat
+    R -e 'install.packages("devtools")'
+
+%runscript
+    Rscript inst/etl_pipeline_example.R

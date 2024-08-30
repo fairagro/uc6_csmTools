@@ -1,12 +1,10 @@
 
 # Libraries ---------------------------------------------------------------
 
-
 library(units)
 library(purrr)
 library(dplyr)
 library(tidyr)
-library(tidyverse)
 library(stringr)
 library(lubridate)
 library(rdwd)
@@ -23,35 +21,6 @@ library(DSSAT)
 library(rlang)
 library(countrycode)
 library(ggplot2)
-
-
-# Package functions -------------------------------------------------------
-
-
-source("./R/crop_data_types.R")
-source("./R/etl_utils.R")
-source("./R/get_weather_data.R")
-source("./R/identify_data_relationships.R")
-source("./R/identify_exp_design.R")
-source("./R/merge_tbls.R")
-source("./R/reshape_exp_data.R")
-source("./R/read_metadata.R")
-source("./R/map_data.R")
-source("./R/format_dssat.R")
-source("./R/edit_dssat.R")
-source("./R/dssat_file_templates.R")
-source("./R/estimate_phenology.R")
-
-
-
-# Package data ------------------------------------------------------------
-
-
-load(file = "./data/wth_data_maps.Rda")
-load(file = "./data/icasa_dssat.Rda")
-load(file = "./data/bnr_seehausen_icasa.Rda")
-
-
 
 # Generate package data (not read) ----------------------------------------
 

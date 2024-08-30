@@ -68,8 +68,8 @@ download_sg <- function(metadata = NULL, lat = NULL, lon = NULL, src = "isric"){
 #' @param lookup a map for a target standards (TODO: replace by standard name, fetch the map internally)
 #' 
 #' @return a data frame; weather data tabes formatted into the DSSAT standard structure
-#' 
-#' @importFrom lubridate is.POSIXct is.POSIXlt is.POSIXt as_date ##DPLYR TIDYR STRINGR soilDB MAPS
+#' ##DPLYR TIDYR STRINGR soilDB MAPS
+#' @importFrom lubridate is.POSIXct is.POSIXlt is.POSIXt as_date 
 #' 
 
 
@@ -135,7 +135,7 @@ format_soil <- function(data, lookup) {  # only works with provided metadata
   return(out)
 }
 
-format_soil(tmp2[[1]], sg_icasa)
+#format_soil(tmp2[[1]], sg_icasa)
 # TODO: comments (cf. weather)
 # TODO: XY in metadata rather than data?
 # Process when multiple locations are downloaded (id)

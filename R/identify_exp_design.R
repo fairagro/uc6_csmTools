@@ -5,8 +5,8 @@
 #' @param end a character or date depicting the last day of last year of the experiment
 #' 
 #' @return the name of the year column
-#' 
-#' @importFrom lubridate is_date year
+#' is_date is from etl_utils.R
+#' @importFrom lubridate year
 #' 
 #' @export
 #'

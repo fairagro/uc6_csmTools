@@ -1,0 +1,21 @@
+{
+	"name": "R (rocker/r-ver base)",
+	"image": "ghcr.io/rocker-org/devcontainer/r-ver:4.4",
+	"features": {
+		"ghcr.io/devcontainers-contrib/features/apt-packages:1": {
+			"packages": [
+				"libudunits2-dev",
+				"default-jdk",
+				"libproj-dev",
+				"libgdal-dev",
+				"cmake"
+			] //can also be done by using install.requirements.sh
+		},
+		"ghcr.io/rocker-org/devcontainer-features/renv-cache:0": {}
+	},
+	"onCreateCommand": "R -e 'install.packages(c(\"renv\", \"languageserver\", \"devtools\"))' && R -e 'options(renv.download.override = utils::download.file)'",
+	"postCreateCommand": {
+		"dssat.install": "chmod +x ./install_dssat.sh && ./install_dssat.sh",
+		"renv.restore": "R -e 'renv::restore()'"
+	}
+}
