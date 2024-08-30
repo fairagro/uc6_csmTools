@@ -13,6 +13,8 @@ format_table(df, template)
 }
 \value{
 a data frame; a formatted DSSAT input table
+
+lubridate as.POSIXct\ # is part of base now
 }
 \description{
 Prepare data tables for export as various DSSAT input file types

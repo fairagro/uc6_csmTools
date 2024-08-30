@@ -16,9 +16,39 @@ csmTools aims to facilitate the ETL process for crop modelers by offering functi
 Currently, available functions have been developed based on a prototype dataset [Seehausen Long-term Fertilization Experiment](https://doi.org/10.20387/bonares-3nqn-41vn) published on the [BonaRes Repository](https://www.bonares.de/research-data). T
 The ETL process can be chiefly divided into four steps: (1) data identification and reshaping, (2) variable mapping, (3) data transformation into model input, and (4) simulation and visualization.
 
+## Installation
+The package uses [renv](https://rstudio.github.io/renv/) for package management. To install all required packages call 
+```R
+renv::restore()
+```
+from an R command prompt. Linux users may need to execute `install_requirements.sh` to install required apt packages. If you need to install DSSAT there is a `install_dssat.sh` to clone and build the package on Linux. Windows Users can just use DSSATs installer. 
+> [!WARNING]
+> Currently the pipeline does not work with the latest DSSAT Version 4.8.2.12 ...
+
+To install the csmTools package exexute 
+```R
+remotes::install_local(".")
+```
+or 
+```R
+remotes::install_github("fairagro/uc6_csmTools")
+``` 
+in an R command prompt
+
+If you use Visual Studio Code you can just load the Devcontainer to have an already set up development enviroment.
 
 ## Test script
 A [test script](inst/etl_pipeline_example.R) allows to run the entire pipeline, from raw data to simulation output, on the example data.
+```bash
+Rscript inst/etl_pipeline_example.R 
+```
+You can also run the pipeline using Docker and the provided Dockerfile and later on copy files with `docker cp`.
+```bash
+docker build . -t uc6_image
+docker run uc6_image --name uc6_container
+docker start uc6_container
+docker cp uc6_container:/uc6_csmTools/Rplots.pdf ./Rplots.pdf
+```
 
 ### Data sources
 All [raw data](inst/extdata/lte_seehausen/0_raw), [model inputs](inst/extdata/lte_seehausen/1_out), and [model outputs](inst/extdata/lte_seehausen/1_sim) can be found in the [external data folder](inst/extdata/lte_seehausen).
