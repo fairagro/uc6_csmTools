@@ -202,30 +202,130 @@ token <- get_frost_token(url = base_url, client_id = client_id, client_secret = 
 
 # Get observations and metadata ------------------------------------------- TODO
 
-# placeholder, server down for few days...
-tmp <- GET('http://localhost:8080/FROST-Server/v1.0/Things(1)', 
-           #accept_json(), 
-           add_headers('Authorization' = paste("Bearer", token))
-           )
-# TODO: apparently max 100 obs per stream, need apply function to pull entire months/years from single device
-
-# Get observations and metadata -------------------------------------------
-
-# ARGS: ds_id OR (?) sensor_id AND attribute / res = c("daily","weekly","monthly") / agg_fun = c("max", "min", "mean")
+# Get sensor metadata
+token <- get_frost_token(url = base_url, client_id = client_id,
+                         client_secret = client_secret, username = username, password = password)
 
 
-ds_obs_raw <- as.data.frame(
-  fromJSON("inst/extdata/IOT-dataStreams/weather_station_air_temperature.json")  # placeholder until server is up
+get_iot_metadata <- function(url, token,
+                             object = c("device","sensor","observed_property","datastream","observations"),
+                             object_id) {
+  
+  url <- paste0(url, switch(object,
+                            "device" = paste0("Things(", object_id, ")"),
+                            "sensor" = paste0("Sensors(", object_id, ")"),
+                            "observed_property" = paste0("ObservedProperties(", object_id, ")"),
+                            "datastream" = paste0("Datastream(", object_id, ")")
+  ))
+  
+  raw <- GET(url, add_headers(`Authorization` = paste("Bearer", token)))
+  
+  json <- fromJSON(content(raw, as = "text"))
+  return(as.data.frame(json))
+}
+
+tmp <- get_iot_metadata(url = user_url,
+                        token = token,
+                        object = "device",
+                        object_id = 7)
+
+
+airtemp_sensor_raw <- GET(paste0(url, "Sensors(1)"), 
+                      add_headers(`Authorization` = paste("Bearer", token)))
+airtemp_sensor_json <- fromJSON(
+  content(airtemp_sensor_raw, as = "text")
 )
 
-#
-ds_obs_raw$value.phenomenonTime <- ymd_hms(iot100_temp$value.phenomenonTime)  # chr to datetime
+# TODO: pull back device/location/sensor/property metadata from datastream
+get_iot_data <- function(url, datastream_id, token) {
+  
+  # function to replace fill null columns
+  replace_null_with_na <- function(x) {
+    if (is.null(x)) {
+      return(NA)
+    } else if (is.list(x)) {
+      return(lapply(x, replace_null_with_na))
+    } else {
+      return(x)
+    }
+  }
+  
+  # Get data
+  all_obs <- list()
+  i <- 1
+  
+  repeat {
+    url_obs <- paste0(url, "Datastreams(", datastream_id, ")/Observations(", i, ")")
 
-# transform to daily data
-ds_obs_fmt <- ds_obs_raw %>%
-  mutate(date = as.Date(value.phenomenonTime)) %>%
+    raw <- GET(url_obs, add_headers(`Authorization` = paste("Bearer", token)))
+    
+    if (status_code(raw) != 200) {
+      break
+    }
+    
+    all_obs[[i]] <- fromJSON(content(raw, as = "text"))
+    all_obs[[i]] <- replace_null_with_na(all_obs[[i]])  # necessary for dataframe conversion
+    i <- i + 1
+  }
+  
+  data <- do.call(rbind, lapply(all_obs, as.data.frame))
+  
+  
+  # Get metadata
+  url_ds <- paste0(user_url, "Datastreams(", datastream_id, ")")
+  metadata_datastream <- fromJSON(
+    content(
+      GET(url_ds, add_headers(`Authorization` = paste("Bearer", token))),
+      as = "text")
+  )
+  
+  metadata_property <- fromJSON(
+    content(
+      GET(metadata_datastream$`ObservedProperty@iot.navigationLink`,
+          add_headers(`Authorization` = paste("Bearer", token))),
+      as = "text")
+  )
+  
+  metadata_device <- fromJSON(
+    content(
+      GET(metadata_datastream$`Thing@iot.navigationLink`,
+          add_headers(`Authorization` = paste("Bearer", token))),
+      as = "text")
+  )
+  
+  metadata_sensor <- fromJSON(
+    content(
+      GET(metadata_datastream$`Sensor@iot.navigationLink`,
+          add_headers(`Authorization` = paste("Bearer", token))),
+      as = "text")
+  )
+  
+  # Compile metadata
+  metadata <- list(
+    device = metadata_device,
+    sensor = metadata_sensor,
+    datasstream = metadata_datastream,
+    property = metadata_property
+  )
+  
+  out <- list(data = data, metadata = metadata)
+  
+  return(out)
+}
+
+token <- get_frost_token(url = base_url, client_id = client_id,
+                         client_secret = client_secret, username = username, password = password)
+obs_airtemp <- get_iot_data(url = user_url, datastream_id = 1, token = token)
+
+
+# Transform to daily data
+obs_airtemp_fmt <- 
+  as.data.frame(obs_airtemp$data) %>%
+  mutate(result = as.numeric(result),
+         date = as.Date(ymd_hms(phenomenonTime))) %>%
   group_by(date) %>%
-  summarise(TMEAN = mean(value.result, na.rm = TRUE), .groups = "drop")
+  summarise(TMIN = min(result, na.rm = TRUE),
+            TMAX = max(result, na.rm = TRUE),
+            TMEAN = mean(result, na.rm = TRUE), .groups = "drop")
 
-
-
+# TODO: make metadata header for 

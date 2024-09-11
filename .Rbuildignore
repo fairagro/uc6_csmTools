@@ -5,3 +5,6 @@ install_dssat.sh
 install_rdeps.sh
 install_requirements.sh
 Dockerfile
+^.*\.Rproj$
+^\.Rproj\.user$
+^\./R/extract_transform_iot\.R$
