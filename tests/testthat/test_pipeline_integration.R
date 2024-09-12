@@ -12,6 +12,7 @@ test_that("pipeline_has_run", {
 
 test_that("pipeline_file_is_valid", {
     output <- DSSAT::read_output(file_name = file)
+    message(readLines(file)[3])
     expect_no_error(output)
 })
 
