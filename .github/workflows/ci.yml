@@ -36,3 +36,5 @@ jobs:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       - name: Test Output
         run: R -e 'source("tests/runner.R")'
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
