@@ -1,4 +1,4 @@
-devtools::install_local(".")
+devtools::install_local(".", force=TRUE)
 test_files <- list.files("tests/testthat", pattern = "^test.*\\.R$", full.names = TRUE)
 
 # Run only the included test files
