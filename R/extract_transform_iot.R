@@ -4,16 +4,16 @@ library(httr)
 library(jsonlite)
 library(lubridate)
 library(dplyr)
+library(tidyr)
 library(purrr)
 library(units)
 library(DSSAT)
 library(usethis)
+library(jsonlite)
 
 #use_build_ignore("./R/extract_transform_iot.R")
 
-
-# Obtain keycloak token (4min validity) --------------------------------------------
-
+####
 get_kc_token <- function(url, client_id, client_secret, username, password) {
   
   response <- POST(
@@ -35,265 +35,174 @@ get_kc_token <- function(url, client_id, client_secret, username, password) {
   return(token)
 }
 
-
-# NOT RUN: simulate and push data onto FROST server --------------------------
-
-## Create virtual device, sensor, and datastream, with corresponding obs property (air temperature) ------
-
-### Device (Thing)
-# body_thing <- toJSON(
-#   list(
-#     name = "HEF_wsta_virtual",
-#     description = "HEF building virtual weather station",
-#     Locations = list(
-#       list(
-#         name = "Freising, Germany",
-#         encodingType = "application/vnd.geo+json",
-#         description = "Freising, HEF building",
-#         location = list(
-#           coordinates = c(11.72400, 48.40173),
-#           type = "Point"
-#         )
-#       )
-#     )
-#   ), auto_unbox = TRUE
-# )
-# 
-# token <- get_frost_token(url = base_url, client_id = client_id, client_secret = client_secret, username = username, password = password)
-# response <- POST(
-#   url = paste0(user_url, "Things"),
-#   body = body_thing,
-#   encode = "json",
-#   add_headers(
-#     `Content-Type` = "application/json",
-#     `Authorization` = paste("Bearer", token)
-#   ),
-#   verbose()
-# )
-# 
-# # Observed Property
-# body_obsPpt <- toJSON(
-#   list(
-#     name = "air_temperature",
-#     description = "https://en.wikipedia.org/wiki/Atmospheric_temperature",
-#     definition = "Celsius"
-#   ), auto_unbox = TRUE
-# )
-# 
-# token <- get_frost_token(url = base_url, client_id = client_id, client_secret = client_secret, username = username, password = password)
-# response <- POST(
-#   url = paste0(user_url, "ObservedProperties"),
-#   body = body_obsPpt,
-#   encode = "json",
-#   add_headers(
-#     `Content-Type` = "application/json",
-#     `Authorization` = paste("Bearer", token)
-#   ),
-#   verbose()
-# )
-# #print(content(response, "text"))
-# 
-# # Sensor
-# body_sensor <- toJSON(
-#   list(
-#     name = "UC6VT01",
-#     encodingType = "application/pdf",
-#     metadata = "http://wiki.seeedstudio.com/Grove-Temperature_and_Humidity_Sensor_Pro/",
-#     description = "http://wiki.seeedstudio.com/Grove-Temperature_and_Humidity_Sensor_Pro/"
-#     ), auto_unbox = TRUE
-# )
-# 
-# token <- get_frost_token(url = base_url, client_id = client_id, client_secret = client_secret, username = username, password = password)
-# response <- POST(
-#   url = paste0(user_url, "Sensors"),
-#   body = body_sensor,
-#   encode = "json",
-#   add_headers(
-#     `Content-Type` = "application/json",
-#     `Authorization` = paste("Bearer", token)
-#   ),
-#   verbose()
-# )
-# print(content(response, "text"))  # error
-# 
-# # Datastream
-# body_datastream <- toJSON(
-#   list(
-#     name = "air_temperature_hef",
-#     unitOfMeasurement = list(
-#       name = "Celsius",
-#       symbol = "C",
-#       definition = "https://en.wikipedia.org/wiki/Celsius"
-#     ),
-#     Thing = list(
-#       `@iot.id` = 7
-#     ),
-#     description = "A datastream for air temperature measured by the HEF virtual weather station",
-#     Sensor = list(
-#       `@iot.id` = 1
-#     ),
-#     ObservedProperty = list(
-#       `@iot.id` = 3
-#     ),
-#     observationType = "http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement"  # clarify
-#   ), auto_unbox = TRUE
-# )
-# 
-# token <- get_frost_token(url = base_url, client_id = client_id, client_secret = client_secret, username = username, password = password)
-# response <- POST(
-#   url = paste0(user_url, "Datastreams"),
-#   body = body_datastream,
-#   encode = "json",
-#   add_headers(
-#     `Content-Type` = "application/json",
-#     `Authorization` = paste("Bearer", token)
-#   ),
-#   verbose()
-# )
-# #print(content(response, "text"))  # error
-# 
-# ## Simulate two months of hourly temperature data ------
-# 
-# start_date <- as.POSIXct("2024-05-01 00:05:00 CEST")
-# end_date <- as.POSIXct("2024-06-30 23:05:00 CEST")
-# 
-# timestamps <- seq(from = start_date, to = end_date, by = "hour")  # hourly time stamps sequence
-# 
-# set.seed(123)  
-# mean_temp <- 15  # mean temperature in degrees Celsius
-# temp_variation <- 10  # temperature variation
-# sim_temp_ts <- mean_temp + temp_variation * sin(2 * pi * (hour(timestamps) / 24)) + rnorm(length(timestamps), mean = 0, sd = 2)
-# 
-# sim_temp_ts_df <- data.frame(time = format(ymd_hms(timestamps, tz = "Europe/Berlin"), "%Y-%m-%dT%H:%M:%S%z"),
-#                              air_temperature = sim_temp_ts
-#                              ) %>%
-#   mutate(time = str_replace(time, "(\\+\\d{2})(\\d{2})$", "\\1:\\2")) %>%
-#   as.data.frame()
-# 
-# 
-# ## Post the dummy data onto sensor hub ------
-# 
-# post_observation <- function(x){
-#   
-#   body_obs <- toJSON(
-#     list(
-#       phenomenonTime = x[1],
-#       result = x[2],
-#       Datastream = list(
-#         `@iot.id` = 1
-#       )
-#     ), auto_unbox = TRUE
-#   )
-#   
-#   response <- POST(
-#     url = paste0(user_url, "Observations"),
-#     body = body_obs,
-#     encode = "json",
-#     add_headers(
-#       `Content-Type` = "application/json",
-#       `Authorization` = paste("Bearer", token)
-#     ),
-#     verbose()
-#   )
-#   
-#   print(content(response, "text"))
-# }
-# 
-# token <- get_frost_token(url = base_url, client_id = client_id, client_secret = client_secret, username = username, password = password)
-# apply(sim_temp_ts_df, 1, post_observation)  # post all observations
-# TODO: silence messages
-
-
-#### Get obseverations and metadata -----------
-
-# Get sensor metadata
-get_ogc_obs <- function(url_user, datastream_id, token) {
+#### Post OGC data
+post_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Datastreams","Observations"), body, url, token){
   
-  # Build URL: currently select phenomenonTime and resul
-  # See: https://developers.sensorup.com/docs/#observations_get for additional attributes
-  url <- paste0(url_user, "Datastreams(", datastream_id, ")/Observations?$select=phenomenonTime,result")
-  observations <- data.frame(phenomenonTime = character(), result = character(), stringsAsFactors = FALSE)
+  body_json <- toJSON(body, auto_unbox = TRUE)
   
-  # Get data (time series)
-  while (!is.null(url)) {
-    response <- GET(url, add_headers(`Authorization` = paste("Bearer", token)))
-    data <- fromJSON(
+  url <- paste0(url, object)
+  response <- POST(url, body = body_json, encode = "json",
+                   add_headers(
+                     `Content-Type` = "application/json",
+                     `Authorization` = paste("Bearer", token)
+                   ),
+                   verbose())
+}
+
+#### Find datastreams
+locate_datastreams <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"), lat, lon, from, to, ...){
+  
+  # Identify all devices from the target server
+  locate_devices <- function(...) {
+    
+    url_locs <- paste0(url, "Things?$expand=Locations")
+    response <- GET(url_locs, add_headers(`Authorization` = paste("Bearer", token)))
+    devices <- fromJSON(
       content(response, as = "text", encoding = "UTF-8")
     )
-    observations <- rbind(observations, data$value)
-    url <- data$`@iot.nextLink`
+    
+    locations <- devices$value$Locations
+    
+    devices <- do.call(
+      rbind,
+      lapply(locations, function(df){
+        df %>%
+          rowwise() %>%
+          mutate(x = location$coordinates[[1]][1],
+                 y = location$coordinates[[1]][2],
+                 url = paste0(url, "Things(", `@iot.id`, ")")) %>%
+          rename(location_name = name, location_description = description) %>%
+          #filter(x == lon & y == lat) %>%
+          select(`@iot.id`, url, location_name, location_description, x, y) %>%
+          as.data.frame()
+      })
+    )
+    
+    # if (nrow(devices) == 0) {
+    #   return("No device was found at the specified coordinates.")
+    # } else {
+    #   return(devices)
+    # }
   }
+  devices <- locate_devices(url, token)
+  #devices <- rbind(devices, devices)  #tmp
+  devices_nms <- paste0("device_", devices$`@iot.id`)
   
+  # Retrieve all datastreams for the selected devices
+  url_dev_ds <- paste0(devices$url, "?$expand=Datastreams")
+  response <- lapply(url_dev_ds, function(url) GET(url, add_headers(`Authorization` = paste("Bearer", token))))
+  url_ds <- lapply(response, function(x) {
+    fromJSON(
+      content(x, as = "text", encoding = "UTF-8")
+    )$Datastreams %>%
+      pull(`@iot.selfLink`)
+  })
   
-  # Get metadata
-  get_metadata <- function(url, token) {
-    response <- GET(url, add_headers(`Authorization` = paste("Bearer", token)))
-    fromJSON(content(response, as = "text"))
+  # Get datastreams metadata incl. observed properties
+  url_ds_prop <- lapply(url_ds, function(url) paste0(url, "?$expand=ObservedProperty"))
+  response <- lapply(url_ds_prop, function(urls) {
+    lapply(urls, function(url) {
+      GET(url, add_headers(`Authorization` = paste("Bearer", token)))
+    })
+  })
+  ds_ls <- lapply(response, function(dev) {
+    lapply(dev, function(x){
+      fromJSON(
+        content(x, as = "text", encoding = "UTF-8")
+      )
+    })
+  })
+  names(ds_ls) <- devices_nms
+  
+  ds_out <- list()
+  for (i in seq_along(ds_ls)) {
+    ds_out[[i]] <- 
+      do.call(
+        rbind,
+        lapply(ds_ls[[i]], function(ds) {
+          tibble(ds_id = ds$`@iot.id`,
+                 ds_link = ds$`@iot.selfLink`,
+                 ds_name = ds$name,
+                 ds_description = ds$description,
+                 obs_type = ds$observationType,
+                 obs_property_id = ds$ObservedProperty$`@iot.id`,
+                 obs_property = ds$ObservedProperty$name,
+                 ds_unit = ds$unitOfMeasurement$name,
+                 ds_lon = as.numeric(ds$observedArea$coordinates[2]),  #CHECK IF VALID
+                 ds_lat = as.numeric(ds$observedArea$coordinates[1]),  #CHECK IF VALID
+                 timeframe = ds$phenomenonTime) %>%
+            separate(timeframe, into = c("start_date","end_date"), sep = "/") %>%
+            mutate(across(start_date:end_date, ~ as.Date(.x)))
+        })
+      )
   }
+  datastreams <- do.call(rbind, ds_out)
   
-  # Base URL for the Datastream
-  url_datastream <- paste0(url_user, "Datastreams(", datastream_id, ")")
-  datastream <- get_metadata(url_datastream, token)  # measured location (xy), measurement unit (name+symbol)
-  property <- get_metadata(datastream$`ObservedProperty@iot.navigationLink`, token)  # property name (user-defined; here AGROVOC + snake_case)
-  device <- get_metadata(datastream$`Thing@iot.navigationLink`, token)  # name + description device
-  sensor <- get_metadata(datastream$`Sensor@iot.navigationLink`, token)  # name + metadata sensor (measurement heights?)
+  # Find focal datastream(s)
+  datastreams <- datastreams %>% filter(ds_lon == lon & ds_lat == lat)
   
-  # Compile metadata
-  metadata <- list(
-    device = device,
-    sensor = sensor,
-    datastream = datastream,
-    property = property
-  )
-  
-  out <- list(data = observations, metadata = metadata)
-  
-  return(out)
+  if (nrow(datastreams) == 0) {
+    return("No data was measured at the specified location")
+  } else {
+    datastreams <- datastreams %>% filter(obs_property %in% var)
+    if (nrow(datastreams) == 0) {
+      return("No data for the focal property could be retrieved at the specified location.")
+    } else {
+      datastreams <- datastreams %>%
+        mutate(is_contained = as.Date(from) >= start_date & as.Date(to) <= end_date) %>%
+        filter(is_contained)
+      if (nrow(datastreams) == 0) {
+        return("Measured data does not encompass the requested timeframe.")
+      } else {
+        return(datastreams[-ncol(datastreams)])
+      }
+    }
+  }
 }
 
-token <- get_kc_token(url = base_url, client_id = client_id, client_secret = client_secret, username = username, password = password)
-obs_airtemp <- get_ogc_obs(url_user = user_url, datastream_id = 1, token = token)
+####
+extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"), lon, lat, from, to) {
+  
+  if(is.null(token)) {
+    token <- get_kc_token(url = url, client_id, client_secret, username, password)  # check token
+  }
+  
+  # Find datastream
+  ds_metadata <- locate_datastreams(url, token, var, lon, lat, from, to)
+  
+  # Extract data
+  urls_obs <- paste0(ds_metadata$ds_link, "?$expand=Observations($select=phenomenonTime,result),ObservedProperty($select=name)")  # API call
+  response <- lapply(urls_obs, function(url) GET(url, add_headers(`Authorization` = paste("Bearer", token))))  # get time series
+  raw <- lapply(response, function(ds){
+    fromJSON(
+      content(ds, as = "text", encoding = "UTF-8")  #need obs property
+    )$Observations
+  })
+  
+  # Append metadata and format raw data
+  data <- raw
+  for (i in seq_along(data)){
+    attr(data[[i]], "metadata") <- ds_metadata[i,]  #TODO: enrich metadata w/ device/sensor name and description
+    data[[i]] <- data[[i]] %>%
+      mutate(measurement_date = ymd_hms(phenomenonTime)) %>%
+      mutate(!!attr(data[[i]], "metadata")$obs_property := as.numeric(result)) %>%
+      select(-c(phenomenonTime, result))
+  }
+  return(data)
+}
 
-# Compile DSSAT header
-# TODO: handle original station name/DSSAT station name
-# TODO: add commentary header: data pulled from TUM Sensorhub with csmTools on ####.##.###; Platform-registered device name: ####; sensor name: ####.
-# TODO: format DSSAT output weather file (POST AND ADD MORE VARIABLES: SRAD, RAIN, WIND, RHUM)
-# input_dssat[[1]]$WEAT_METADATA
-format_ogc_icasa <- function(data, metadata){
+####
+etl_iot_wrapper <- function(url, token, var = c("air_temperature","solar_radiation","rainfall"), lon, lat, from, to,
+                            input_model, output_model, map = load_map(path), keep_unmapped = FALSE, col_exempt = NULL) {
+  
+  raw <- extract_iot(url, token, var, lon, lat, from, to)
+  
+  mapped_data <- map_data(df = raw[[1]], input_model, output_model, map, keep_unmapped = FALSE, col_exempt = NULL)
+  
+  return(mapped_data)
 }
 
 
-data <- obs_airtemp$data
-metadata <- obs_airtemp$metadata
-var <- metadata$property$name  # standard: https://agrovoc.fao.org/browse/agrovoc/en/page/c_6496
-units <- make_units(metadata$datastream$unitOfMeasurement$name)  # standard: https://en.wikipedia.org/wiki/List_of_metric_units
-
-# Spatial metadata
-lon <- metadata$datastream$observedArea$coordinates[[1]]
-lat <- metadata$datastream$observedArea$coordinates[[2]]
-obj_type <- metadata$datastream$observedArea$type
-
-# Format data to ICASA
-data <- data %>%
-  mutate(!!sym(var) := as.numeric(result),
-         DATE = as.Date(ymd_hms(phenomenonTime))) %>%
-  select(DATE, !!sym(var))
-
-### TODO: GET UNITS AND CONVERT IF NEEDED
-
-# TODO: define ofc(agrovoc)-icasa data map as internal data
-agg_funs <- list(
-  TMAX = ~ if (cur_column() == "air_temperature") { max(.x, na.rm = TRUE) } else { NA} ,
-  TMIN = ~ if (cur_column() == "air_temperature") { min(.x, na.rm = TRUE) } else { NA },
-  RAIN = ~ if (cur_column() == "rainfall") { sum(.x, na.rm = TRUE) } else { NA },
-  DEWP = ~ if (cur_column() == "dew_point_temperature") { mean(.x, na.rm = TRUE) } else { NA },
-  WIND = ~ if (cur_column() == "wind_speed") { sum(.x, na.rm = TRUE) } else { NA },
-  RHUM = ~ if (cur_column() == "relative_humidity") { mean(.x, na.rm = TRUE) } else { NA }
-)
-
-data_daily <- data %>%
-  group_by(DATE) %>%
-  summarise(across(all_of(var), agg_funs, .names = "{.fn}"))
 
 # Format mmetadata
 tav <- data_daily %>%
