@@ -8,8 +8,10 @@ library(tidyr)
 library(purrr)
 library(units)
 library(DSSAT)
-library(usethis)
+#library(usethis)
 library(jsonlite)
+library(tidygeocoder)
+library(elevatr)
 
 #use_build_ignore("./R/extract_transform_iot.R")
 
@@ -35,7 +37,7 @@ get_kc_token <- function(url, client_id, client_secret, username, password) {
   return(token)
 }
 
-#### Post OGC data
+#### Post OGC data to the hosting server
 post_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Datastreams","Observations"), body, url, token){
   
   body_json <- toJSON(body, auto_unbox = TRUE)
@@ -49,8 +51,41 @@ post_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Dat
                    verbose())
 }
 
+#### Delete OGC objects on the hosting server
+delete_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Datastreams","Observations"), object_id, url, token){
+  
+  if (!grepl("^http[s]?://", url)) {
+    stop("Invalid URL: Must start with http:// or https://")
+  }
+  
+  url <- paste0(url, object, "(", object_id, ")")
+  response <- DELETE(url,
+                     add_headers(
+                       `Content-Type` = "application/json",
+                       `Authorization` = paste("Bearer", token)
+                       ))
+}
+
+#### Modify OGC objects on the hosting server
+patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Datastreams","Observations"), object_id, url, token, body){
+  
+  if (!grepl("^http[s]?://", url)) {
+    stop("Invalid URL: Must start with http:// or https://")
+  }
+  body_json <- toJSON(body, auto_unbox = TRUE)
+  
+  url <- paste0(url, object, "(", object_id, ")")
+  response <- PATCH(url, body = body_json, encode = "json",
+                    add_headers(
+                      `Content-Type` = "application/json",
+                      `Authorization` = paste("Bearer", token)
+                    ))
+}
+
+
 #### Find datastreams
-locate_datastreams <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"), lat, lon, from, to, ...){
+# TODO: update function to handle multiple devices in single location
+locate_datastreams <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"), lon, lat, from, to, ...){
   
   # Identify all devices from the target server
   locate_devices <- function(...) {
@@ -120,44 +155,63 @@ locate_datastreams <- function(url, token = NULL, var = c("air_temperature","sol
       do.call(
         rbind,
         lapply(ds_ls[[i]], function(ds) {
-          tibble(ds_id = ds$`@iot.id`,
-                 ds_link = ds$`@iot.selfLink`,
-                 ds_name = ds$name,
-                 ds_description = ds$description,
-                 obs_type = ds$observationType,
-                 obs_property_id = ds$ObservedProperty$`@iot.id`,
-                 obs_property = ds$ObservedProperty$name,
-                 ds_unit = ds$unitOfMeasurement$name,
-                 ds_lon = as.numeric(ds$observedArea$coordinates[2]),  #CHECK IF VALID
-                 ds_lat = as.numeric(ds$observedArea$coordinates[1]),  #CHECK IF VALID
-                 timeframe = ds$phenomenonTime) %>%
-            separate(timeframe, into = c("start_date","end_date"), sep = "/") %>%
+          tibble(Datastream_id = ds$`@iot.id`,
+                 Datastream_link = ds$`@iot.selfLink`,
+                 Datastream_name = ds$name,
+                 Datastream_description = ds$description,
+                 observationType = ds$observationType,
+                 ObservedProperty_id = ds$ObservedProperty$`@iot.id`,
+                 ObservedProperty_name = ds$ObservedProperty$name,
+                 unitOfMeasurement_name = ds$unitOfMeasurement$name,
+                 unitOfMeasurement_symbol = ds$unitOfMeasurement$symbol,
+                 longitude = as.numeric(ds$observedArea$coordinates[1]),
+                 latitude = as.numeric(ds$observedArea$coordinates[2]),
+                 phenomenonTime = ds$phenomenonTime) %>%
+            separate(phenomenonTime, into = c("start_date","end_date"), sep = "/") %>%
             mutate(across(start_date:end_date, ~ as.Date(.x)))
         })
       )
   }
   datastreams <- do.call(rbind, ds_out)
-  
+
   # Find focal datastream(s)
-  datastreams <- datastreams %>% filter(ds_lon == lon & ds_lat == lat)
-  
-  if (nrow(datastreams) == 0) {
+  out <- datastreams %>% filter(longitude == lon & latitude == lat)
+
+  if (nrow(out) == 0) {
     return("No data was measured at the specified location")
   } else {
-    datastreams <- datastreams %>% filter(obs_property %in% var)
-    if (nrow(datastreams) == 0) {
+    out <- out %>% filter(ObservedProperty_name %in% var)
+    if (nrow(out) == 0) {
       return("No data for the focal property could be retrieved at the specified location.")
     } else {
-      datastreams <- datastreams %>%
+      out <- out %>%
         mutate(is_contained = as.Date(from) >= start_date & as.Date(to) <= end_date) %>%
         filter(is_contained)
-      if (nrow(datastreams) == 0) {
+      if (nrow(out) == 0) {
         return("Measured data does not encompass the requested timeframe.")
       } else {
-        return(datastreams[-ncol(datastreams)])
+        return(out[-ncol(out)])
       }
     }
   }
+}
+
+#### Function to handle Sensorhub pagination
+get_all_obs <- function(url, token) {
+  
+  url_ds <- sub("\\?.*", "", url)  # datastream url
+  
+  all_obs <- data.frame(phenomenonTime = character(0), result = numeric(0))
+  i = 0
+  repeat {
+    response <- GET(url, add_headers(`Authorization` = paste("Bearer", token)))
+    content <- fromJSON(content(response, as = "text", encoding = "UTF-8"))
+    all_obs <- rbind(all_obs, content$Observations)
+    if (is.null(content$`Observations@iot.nextLink`)) break
+    i <- i+100
+    url <- paste0(url_ds, "?$expand=Observations($select=phenomenonTime,result;$skip=",i,"),ObservedProperty($select=name)")
+  }
+  return(all_obs)
 }
 
 ####
@@ -170,22 +224,16 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
   # Find datastream
   ds_metadata <- locate_datastreams(url, token, var, lon, lat, from, to)
   
-  # Extract data
-  urls_obs <- paste0(ds_metadata$ds_link, "?$expand=Observations($select=phenomenonTime,result),ObservedProperty($select=name)")  # API call
-  response <- lapply(urls_obs, function(url) GET(url, add_headers(`Authorization` = paste("Bearer", token))))  # get time series
-  raw <- lapply(response, function(ds){
-    fromJSON(
-      content(ds, as = "text", encoding = "UTF-8")  #need obs property
-    )$Observations
-  })
+  urls_obs <- paste0(ds_metadata$Datastream_link, "?$expand=Observations($select=phenomenonTime,result;$skip=0),ObservedProperty($select=name)")
+  data <- lapply(urls_obs, function(url) get_all_obs(url, token))
+  names(data) <- var
   
   # Append metadata and format raw data
-  data <- raw
   for (i in seq_along(data)){
     attr(data[[i]], "metadata") <- ds_metadata[i,]  #TODO: enrich metadata w/ device/sensor name and description
     data[[i]] <- data[[i]] %>%
       mutate(measurement_date = ymd_hms(phenomenonTime)) %>%
-      mutate(!!attr(data[[i]], "metadata")$obs_property := as.numeric(result)) %>%
+      mutate(!!attr(data[[i]], "metadata")$ObservedProperty_name := as.numeric(result)) %>%
       select(-c(phenomenonTime, result))
   }
   return(data)
@@ -202,36 +250,3 @@ etl_iot_wrapper <- function(url, token, var = c("air_temperature","solar_radiati
   return(mapped_data)
 }
 
-
-
-# Format mmetadata
-tav <- data_daily %>%
-  summarise(TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
-  pull(TAV)
-amp <- data_daily %>%
-  mutate(mo = month(DATE)) %>%
-  group_by(mo) %>%
-  summarise(mo_TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
-  summarise(AMP = (max(mo_TAV)-min(mo_TAV))/2) %>%
-  pull(AMP)
-
-metadata <- data.frame(
-  WSTA = "DEFS",  # TODO: retrieve location name and produce name
-  LAT = lat,
-  LONG = lon,
-  ELEV = NA,
-  TAV = tav,
-  AMP = amp,
-  REFHT = 2,  # document in device/sensor metadata? Would need text mining workflow
-  WNDHT = NA  # document in device/sensor metadata?
-  )
-
-comments <- "TODO"
-
-# TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
-
-
-
-###---- Compile file--------------------
-iot_airtemp_fmt <- build_wth(ls = iot_airtemp, keep_unmapped = FALSE) # TODO: Test with SITE and DESCRIPTION in template
-write_wth2(iot_airtemp_fmt, "test_iot.WTH")  # TODO: correct LAT/LONG
