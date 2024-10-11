@@ -82,8 +82,8 @@ make_code_lookup <- function(vec){
 #'
 
 map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
-  
-  mapped_cols <- c()  # empty vector to store processed column names
+
+  mapped_cols <- c()  # empty vector to store mapped column names = column in both data models, whether same-named of different
   
   if (direction == "to_icasa"){
     map <- map %>% rename(header_in = header, header_out = icasa_header_short)
@@ -92,23 +92,32 @@ map_headers <- function(df, map, direction = c("to_icasa", "from_icasa")) {
   }
     
   for (i in seq_along(colnames(df))) {
-    
+
     matches <- which(map$header_in == colnames(df)[i])  # get index of matches
     
     if (length(matches) > 0) {
       for (j in seq_along(matches)) {
+
         match_index <- matches[j]
         if (is.na(map$header_in[match_index]) | map$header_out[match_index] == "") {
           next
         }
-        mapped_cols <- c(mapped_cols, colnames(df)[i])  # add original column name to list of processed columns
-        
-        new_col_nm <-map$header_out[match_index]
-        df[[new_col_nm]] <- df[[colnames(df)[i]]]  # add mapped column as a new column
+        # Only map headers if they are not identical in input and output models (i.e., as in some cases in ICASA-DSSAT)
+        if (map$header_in[match_index] != map$header_out[match_index]){
+          mapped_cols <- c(mapped_cols, colnames(df)[i])
+          new_col_nm <-map$header_out[match_index]
+          df[[new_col_nm]] <- df[[colnames(df)[i]]]  # add mapped column as a new column
+        } else {
+          mapped_cols <- c(mapped_cols, colnames(df)[i])
+          new_col_nm <- paste0(map$header_out[match_index], "_2")
+          df[[new_col_nm]] <- df[[colnames(df)[i]]]  # duplicate columns to keep original order
+        }
       }
     }
   }
+
   df <- df[ , !(colnames(df) %in% mapped_cols)]  # remove the original columns after mapping
+  colnames(df) <- gsub("_2", "", colnames(df))  # remove temporary suffixes used to preserve column order
   
   out <- list(data = df, mapped = mapped_cols)
   return(out)
@@ -192,7 +201,7 @@ convert_unit <- function(x, u1, u2){
 #' 
 #'
 
-convert_units <- function(df, map, direction) {
+convert_units <- function(df, metadata = NULL, map, direction) {
   
   if (direction == "to_icasa"){ # !!run only after mapping headers!
     map <- map %>% rename(header_in = icasa_header_short, header_out = header, unit_in = unit, unit_out = icasa_unit)  
@@ -208,7 +217,7 @@ convert_units <- function(df, map, direction) {
       
       if (map$unit_in[j] == "not_set"){
         if(!is.null(metadata)) {
-          map$unit_in[j] <- metadata$ds_unit  # retrieve unit in metadata if "not_set" (for sensors)
+          map$unit_in[j] <- metadata$unitOfMeasurement_symbol  # retrieve unit in metadata if "not_set" (for sensors)
         } else {
           map$unit_in[j] <- ""
         }
@@ -244,9 +253,14 @@ convert_units <- function(df, map, direction) {
 apply_function <- function(var, fun, args, df) {
   
   fun_parsed <- eval(parse(text = fun))  # parse function
-  args_parsed <- if (is.null(args[[1]]) || length(args[[1]]) == 0) list() else unlist(args, recursive = FALSE)  # format argument as simple list
+  args_parsed <- if (all(sapply(args, is.null)) | length(args) == 0) { # format argument as simple list
+    list()
+  } else {
+    unlist(args, recursive = FALSE)
+  }
+
   cols <- colnames(df[colnames(df) %in% c(var, args_parsed)])  # save column names for output
-  
+
   if(is.null(fun_parsed)){
     fun_parsed <- eval(parse(text = "function(x, ...){as.data.frame(identity(x))}"))
   } 
@@ -255,6 +269,7 @@ apply_function <- function(var, fun, args, df) {
   
   return(out)
 }
+
 
 #' Apply a set of wrangling functions stored in a map to a data frame
 #' 
@@ -272,9 +287,13 @@ apply_function <- function(var, fun, args, df) {
 # TODO: fun_headers, complete missing funs in the map
 transform_data <- function(df, map, ...) {
   
+  if(all(is.na(map$fun_values) | sapply(map$fun_values, is.null) | map$fun_values == "")){
+    return(df)
+  }
+  
   # Identify argument and transform argument variables
   arg_vars <- map[map$icasa_header_short %in% unlist(map$fun_values_args),]$icasa_header_short
-  df_grp <- apply_function(arg_vars, map[map$icasa_header_short==arg_vars,]$fun_values, map[map$icasa_header_short==arg_vars,]$fun_values_args, df)
+  df_grp <- apply_function(arg_vars, map[map$icasa_header_short%in%arg_vars,]$fun_values, map[map$icasa_header_short%in%arg_vars,]$fun_values_args, df)
   colnames(df_grp) <- colnames(df)
   
   # Transform variables based on updated argument variables
@@ -284,14 +303,15 @@ transform_data <- function(df, map, ...) {
   })
   
   # Merge output into a dataframe
-  cmn_cols <- Reduce(intersect, lapply(out_ls, colnames))
-  if(length(cmn_cols)>0){
+  if(length(out_ls)>1){
+    cmn_cols <- Reduce(intersect, lapply(out_ls, colnames))
     out <- unique(
-      Reduce(function(x, y) merge(x, y, by = cmn_cols, all = TRUE), df_ls)  # aggregated data
+      Reduce(function(x, y) merge(x, y, by = cmn_cols, all = TRUE), out_ls)  # aggregated data
     )
   } else {
     out <- do.call(cbind, out_ls)  # non-aggregative transformed data
   }
+  
   return(out)
 }
 
@@ -315,58 +335,122 @@ transform_data <- function(df, map, ...) {
 #'
 
 map_data <- function(df, input_model, output_model, map, keep_unmapped = TRUE, col_exempt = NULL){
+  
+  # df <- raw_data[[1]]
+  # map <- load_map(path)
+  # input_model = "ogcAgrovoc"
+  # output_model = "icasa"
 
-  df0 <- df  # store original data
   metadata <- attributes(df)$metadata  # store metadata
 
-  # Subset map based on input model and mapping direction
-  if (input_model == "icasa"){
-    map <- map[map$dataModel == output_model & map$icasa_header_short %in% colnames(df),]
-    dir <- "from_icasa"
-  } else {
-    if (output_model == "icasa"){
+  # Perform the mapping sequence (i.e., headers -> codes -> units -> transformations)
+  mapping_sequence <- function(df, map, ...){
+    # Perform the mapping
+    if ("icasa" %in% output_model){
+      df0 <- df  # store original data
       map <- map[map$dataModel == input_model & map$header %in% colnames(df),]
-      dir <- "to_icasa"
+      headers <- map_headers(df, map, "to_icasa")  # map headers
+      df <- headers$data
+      mapped_cols <- unique(headers$mapped)
+      df <- map_codes(df, map, dir)  # map codes
+      df <- convert_units(df, metadata, map, dir)  # convert units
+      df <- transform_data(df, map)  # apply transformations
+    } else if ("icasa" %in% input_model){
+      df0 <- df  # store original data
+      map <- map[map$dataModel == output_model & map$icasa_header_short %in% colnames(df),]
+      headers <- map_headers(df, map, "from_icasa")  # map headers
+      df <- headers$data
+      mapped_cols <- unique(headers$mapped)  # TODO: CHECK WHY NULL?
+      #df <- map_codes(df, map, dir)  # map codes ## TODO: CHECK, PRODUCES ERROR!
+      df <- convert_units(df, metadata, map, dir)  # convert units
     } else {
+      df0 <- df  # store original data
       map_icasa <- map[map$dataModel == input_model & map$header %in% colnames(df),]
       map <- map[map$dataModel == output_model & map$icasa_header_short %in% colnames(df),]
+      headers <- map_headers(df, , "to_icasa")
+      df_icasa <- headers$data
+      mapped_cols <- unique(headers$mapped)
+      df_icasa <- map_codes(df_icasa, map_icasa, "to_icasa")  # map codes
+      df_icasa <- convert_units(df_icasa, map_icasa, "to_icasa")  # convert units  #! METADATA ARG? TOTEST
+      df_icasa <- transform_data(df_icasa, map_icasa)  # apply transformations
+      ### TODO: test
+      df <- map_headers(df_icasa, map, "from_icasa")
+      df <- headers$data
+      df <- map_codes(df, map, "from_icasa")  # map codes
+      df <- convert_units(df, metadata, map, "from_icasa")  # convert units
     }
+    # Store unmapped variables
+    unmapped_cols <- setdiff(colnames(df0), mapped_cols)  # check main branch
+    # Drop columns not in standard if required
+    if (keep_unmapped) {
+      out <- distinct(df[, !colnames(df) %in% col_exempt])
+    } else {
+      out <- distinct(df[, !colnames(df) %in% setdiff(unmapped_cols, col_exempt), drop = FALSE])
+    }
+    return(out)
   }
   
-  # Perform the mapping
-  if ("icasa" %in% output_model){
-    headers <- map_headers(df, map, dir)  # map headers
-    df <- headers$data
-    mapped_cols <- unique(headers$mapped)
-    df <- map_codes(df, map, dir)  # map codes
-    df <- convert_units(df, map, dir)  # convert units
-    df <- transform_data(df, map)  # apply transformations
-  } else if ("icasa" %in% input_model){
-    df <- map_headers(df, map, dir)  # map headers
-    df <- map_codes(df, map, dir)  # map codes
-    df <- convert_units(df, map, dir)  # convert units
-  } else {
-    df_icasa <- map_headers(df, map_icasa, "to_icasa")
-    df_icasa <- map_codes(df_icasa, map, dir)  # map codes
-    df_icasa <- convert_units(df_icasa, map, dir)  # convert units
-    df_icasa <- transform_data(df_icasa, map)  # apply transformations
-    ###
-    df <- map_headers(df_icasa, map, "from_icasa")
-    df <- map_codes(df, map, dir)  # map codes
-    df <- convert_units(df, map, dir)  # convert units
-  }
+  data_mapped <- mapping_sequence(df, map)  # map data table
+  if(!is.null(metadata)) metadata_mapped <- mapping_sequence(metadata, map)  # map metadata table
   
-  # Store unmapped variables
-  unmapped_cols <- setdiff(colnames(df0), mapped_cols)  # check main branch
-
-  # Drop columns not in standard if required
-  if (keep_unmapped) {
-    df <- distinct(df[, !colnames(df) %in% col_exempt])
-  } else {
-    df <- distinct(df[, !colnames(df) %in% setdiff(unmapped_cols, col_exempt), drop = FALSE])
-  }
+  attr(data_mapped, "metadata") <- metadata_mapped
   
-  return(df)
+  return(data_mapped)
 }
 
+
+
+#' Format metadata for different data models
+#' 
+#' ###
+#' 
+#' 
+
+fmt_metadata <- function(data, model = c("icasa", "dssat"), section = c("general", "experiment", "management", "soil", "weather")){
+  
+  metadata <- attr(data, "metadata")
+  if (is.null(metadata)){
+    message("Metadata table not found.")
+    return(data)
+  }
+  
+  if (model == "dssat"){
+    if (section == "weather"){
+      
+      coords <- data.frame(x = mean(metadata$LONG), y = mean(metadata$LAT))  # retrieve coordinates
+      addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm', full_results = TRUE, quiet = TRUE)  # find location name
+      suppressMessages({elev <- get_elev_point(coords, prj = 4326, src = "aws")})
+      
+      attr(data, "station_metadata") <-
+        data.frame(INSI = toupper(paste0(addr$country_code, abbreviate(addr$town, minlength = 2L))),
+                   LAT = coords$y,
+                   LONG = coords$x,
+                   ELEV = elev$elevation,
+                   TAV = data %>%
+                     summarise(TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
+                     pull(TAV),
+                   AMP = data %>%
+                     mutate(mo = month(DATE)) %>%
+                     group_by(mo) %>%
+                     summarise(mo_TAV = mean((TMAX + TMIN)/2, na.rm = TRUE)) %>%
+                     summarise(AMP = (max(mo_TAV)-min(mo_TAV))/2) %>%
+                     pull(AMP),
+                   REFHT = 2,  # document in device/sensor metadata? Would need text mining workflow
+                   WNDHT = NA_real_  # document in device/sensor metadata?
+        )
+      
+      # Top elements
+      attr(data, "title") <- toupper(paste(addr$town, addr$state, addr$country, sep = ", "))  # title
+      attr(data, "comments") <- list("Sensor metadata: ###", paste0("Dataset generated with csmTools on ", Sys.Date())) ### add sensor/ppty metadata
+      attr(data, "filename") <- paste0(wst_id, substr(year(timeframe[1]), 3, 4), "01", ".WTH")  # file name
+      attributes(data)$metadata <- NULL  # remove old format
+      
+      return(data)
+    }
+    ## TODO: ADD ICASA METADATA / OTHER DATA SECTIONS
+  }
+  
+}
+
+# # TODO: add_property_mapping <- function(name, unit, icasa = list(), agg_funs = list())
 
