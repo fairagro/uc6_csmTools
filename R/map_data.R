@@ -212,9 +212,7 @@ convert_units <- function(df, metadata = NULL, map, direction) {
   # Convert units by checking variable sequentially
   for (i in seq_along(colnames(df))) {
     for (j in 1:nrow(map)){
-      
-      #j <- 1
-      
+
       if (map$unit_in[j] == "not_set"){
         if(!is.null(metadata)) {
           map$unit_in[j] <- metadata$unitOfMeasurement_symbol  # retrieve unit in metadata if "not_set" (for sensors)
@@ -419,10 +417,12 @@ fmt_metadata <- function(data, model = c("icasa", "dssat"), section = c("general
       
       coords <- data.frame(x = mean(metadata$LONG), y = mean(metadata$LAT))  # retrieve coordinates
       addr <- reverse_geocode(coords, long = x, lat = y, method = 'osm', full_results = TRUE, quiet = TRUE)  # find location name
+      year <- year(data$DATE[1])  # retrieve year
+      wst_id <- toupper(paste0(addr$country_code, abbreviate(addr$town, minlength = 2L)))  # make weather station id (DSSAT format)
       suppressMessages({elev <- get_elev_point(coords, prj = 4326, src = "aws")})
       
       attr(data, "station_metadata") <-
-        data.frame(INSI = toupper(paste0(addr$country_code, abbreviate(addr$town, minlength = 2L))),
+        data.frame(INSI = wst_id,
                    LAT = coords$y,
                    LONG = coords$x,
                    ELEV = elev$elevation,
@@ -440,9 +440,9 @@ fmt_metadata <- function(data, model = c("icasa", "dssat"), section = c("general
         )
       
       # Top elements
-      attr(data, "title") <- toupper(paste(addr$town, addr$state, addr$country, sep = ", "))  # title
+      attr(data, "location") <- toupper(paste(addr$town, addr$state, addr$country, sep = ", "))  # title
       attr(data, "comments") <- list("Sensor metadata: ###", paste0("Dataset generated with csmTools on ", Sys.Date())) ### add sensor/ppty metadata
-      attr(data, "filename") <- paste0(wst_id, substr(year(timeframe[1]), 3, 4), "01", ".WTH")  # file name
+      attr(data, "filename") <- paste0(wst_id, substr(year, 3, 4), "01", ".WTH")  # file name
       attributes(data)$metadata <- NULL  # remove old format
       
       return(data)
