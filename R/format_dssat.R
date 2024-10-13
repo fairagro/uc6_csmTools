@@ -377,34 +377,26 @@ build_sol <- function(ls) {
 #' @importFrom DSSAT as_DSSAT_tbl
 #'
 
-build_wth <- function(ls) {
+build_wth <- function(df) {
   
-  data <- ls[["WEATHER_Daily"]]
-  header <- ls[["WEATHER_Header"]]
-  comments <- attr(ls[["WEATHER_Daily"]], "comments")
+  attr <- attributes(df)
   
   # Apply the template format for daily weather data
-  wth <- format_table(data, WEATHER_template) %>%
-    mutate(DATE = format(as.Date(DATE), "%y%j"))
+  wth <- format_table(df, WEATHER_template) %>% mutate(DATE = format(as.Date(DATE), "%y%j"))
   
   # Corrected print formats (temp workaround for date formatting issue with write_wth)
   wth_fmt <- c(DATE = "%5s",  # instead of %7s
                SRAD = "%6.1f", TMAX = "%6.1f",TMIN = "%6.1f",
                RAIN = "%6.1f", DEWP = "%6.1f", WIND = "%6.0f",
-               PAR = "%6.1f", EVAP = "%6.1f", RHUM = "%6.1f"
-  )
+               PAR = "%6.1f", EVAP = "%6.1f", RHUM = "%6.1f")
   #wth <- as.data.frame(mapply(function(x, y) sprintf(y, x), wth, wth_fmt))
-  
-  # Make file names
-  insi <- header$INSI
-  year <- ls[["WEATHER_Header"]]$Year
   
   # Set metadata as attributes
   attr(wth, "v_fmt") <- wth_fmt  # corrected print formats
   attr(wth, "GENERAL") <- as_DSSAT_tbl(header[!names(header) == "Year"])
-  attr(wth, "location") <- ls[["GENERAL"]]$SITE
-  attr(wth, "comments") <- comments
-  attr(wth, "file_name") <- paste0(insi, substr(year, nchar(year) - 1, nchar(year)), "01.WTH")
+  attr(wth, "location") <- attr$location
+  attr(wth, "comments") <- attr$comments
+  attr(wth, "file_name") <- attr$filename
   
   return(wth)
 }
