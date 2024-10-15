@@ -1,21 +1,18 @@
-# Load packages tmp -------------------------------------------------------
+#' Get keycloak token to accept the SensorHub API
+#' 
+#' @export
+#' 
+#' @param url ###
+#' @param client_id ###
+#' @param client_secret ###
+#' @param username ###
+#' @param password ###
+#' #' 
+#' @return a character vector containing the keycloak token
+#' 
+#' @importFrom httr POST add_headers content
+#'
 
-library(httr)
-library(jsonlite)
-library(lubridate)
-library(dplyr)
-library(tidyr)
-library(purrr)
-library(units)
-library(DSSAT)
-#library(usethis)
-library(jsonlite)
-library(tidygeocoder)
-library(elevatr)
-
-#use_build_ignore("./R/extract_transform_iot.R")
-
-####
 get_kc_token <- function(url, client_id, client_secret, username, password) {
   
   response <- POST(
@@ -37,7 +34,22 @@ get_kc_token <- function(url, client_id, client_secret, username, password) {
   return(token)
 }
 
-#### Post OGC data to the hosting server
+
+#' Post data to SensorHub via OGC SensorThings API
+#' 
+#' @export
+#' 
+#' @param object ###
+#' @param body ###
+#' @param url ###
+#' @param token ###
+#' 
+#' @return a response object containing information from the request
+#' 
+#' @importFrom jsonlite toJSON
+#' @importFrom httr POST add_headers verbose
+#'
+
 post_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Datastreams","Observations"), body, url, token){
   
   body_json <- toJSON(body, auto_unbox = TRUE)
@@ -51,7 +63,20 @@ post_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Dat
                    verbose())
 }
 
-#### Delete OGC objects on the hosting server
+#' Modify data hosted on SensorHub via OGC SensorThings API
+#' 
+#' @export
+#' 
+#' @param object ###
+#' @param object_id ###
+#' @param url ###
+#' @param token ###
+#' 
+#' @return a response object containing information from the request
+#' 
+#' @importFrom httr DELETE add_headers
+#'
+
 delete_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Datastreams","Observations"), object_id, url, token){
   
   if (!grepl("^http[s]?://", url)) {
@@ -66,7 +91,23 @@ delete_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","D
                        ))
 }
 
-#### Modify OGC objects on the hosting server
+
+#' Modify data hosted on SensorHub via OGC SensorThings API
+#' 
+#' @export
+#' 
+#' @param object ###
+#' @param object_id ###
+#' @param body ###
+#' @param url ###
+#' @param token ###
+#' 
+#' @return a response object containing information from the request
+#' 
+#' @importFrom jsonlite toJSON
+#' @importFrom httr PATCH add_headers verbose
+#'
+
 patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Datastreams","Observations"), object_id, url, token, body){
   
   if (!grepl("^http[s]?://", url)) {
@@ -83,7 +124,28 @@ patch_ogc_iot <- function(object = c("Things","Sensors","ObservedProperties","Da
 }
 
 
-#### Find datastreams
+#' Find datastreams hosted on SensorHub based on target coordinates, timeframe and variables
+#' 
+#' @export
+#' 
+#' @param url ###
+#' @param token ###
+#' @param var ###
+#' @param lon ###
+#' @param lat ###
+#' @param from ###
+#' @param to ###
+#' 
+#' @return a data frame contaning matching datastreams
+#' 
+#' @importFrom jsonlite fromJSON
+#' @importFrom httr GET content add_headers
+#' @importFrom dplyr rowwise mutate rename select pull across filter
+#' @importFrom tibble tibble
+#' @importFrom tidyr separate
+#' @importFrom magrittr "%>%"
+#'
+
 # TODO: update function to handle multiple devices in single location
 locate_datastreams <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"), lon, lat, from, to, ...){
   
@@ -196,7 +258,20 @@ locate_datastreams <- function(url, token = NULL, var = c("air_temperature","sol
   }
 }
 
-#### Function to handle Sensorhub pagination
+#' Function to circumvent pagination limits from SensorHub to get all obs
+#' with a single request
+#' 
+#' @export
+#' 
+#' @param url ###
+#' @param token ###
+#' 
+#' @return a data frame with all pulled SensorHub observations
+#' 
+#' @importFrom jsonlite fromJSON
+#' @importFrom httr GET content add_headers
+#'
+
 get_all_obs <- function(url, token) {
   
   url_ds <- sub("\\?.*", "", url)  # datastream url
@@ -214,7 +289,27 @@ get_all_obs <- function(url, token) {
   return(all_obs)
 }
 
-####
+
+#' Fetach IoT data hosted on SensorHub
+#' 
+#' @export
+#' 
+#' @param url ###
+#' @param token ###
+#' @param var ###
+#' @param lon ###
+#' @param lat ###
+#' @param from ###
+#' @param to ###
+#' 
+#' @return a data frame contaning matching datastreams
+#' 
+#' @importFrom lubridate ymd_hms
+#' @importFrom dplyr mutate select
+#' @importFrom magrittr "%>%"
+#' @importFrom rlang ":="
+#'
+
 extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radiation","rainfall"), lon, lat, from, to) {
   
   if(is.null(token)) {
@@ -237,16 +332,5 @@ extract_iot <- function(url, token = NULL, var = c("air_temperature","solar_radi
       select(-c(phenomenonTime, result))
   }
   return(data)
-}
-
-####
-etl_iot_wrapper <- function(url, token, var = c("air_temperature","solar_radiation","rainfall"), lon, lat, from, to,
-                            input_model, output_model, map = load_map(path), keep_unmapped = FALSE, col_exempt = NULL) {
-  
-  raw <- extract_iot(url, token, var, lon, lat, from, to)
-  
-  mapped_data <- map_data(df = raw[[1]], input_model, output_model, map, keep_unmapped = FALSE, col_exempt = NULL)
-  
-  return(mapped_data)
 }
 
