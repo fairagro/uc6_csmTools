@@ -24,7 +24,7 @@ download_sg <- function(metadata = NULL, lat = NULL, lon = NULL, src = "isric"){
     if(length(lat)!=length(lon)) {
       stop("Lengths of lat and lon arguments differ. Please provide lattitude and longitude for all locations.")
     } else {
-      id <- seq_along(lat) ; print(id)
+      id <- seq_along(lat)
       fields <- data.frame(id = as.character(id), lat = lat, lon = lon)
     }
   } else {
@@ -37,8 +37,9 @@ download_sg <- function(metadata = NULL, lat = NULL, lon = NULL, src = "isric"){
   # Extract horizon data
   horizons <- as.data.frame(raw_data@horizons) %>%
     separate(label, into = c("updep","lodep"), sep = "-") %>%  # set low depth as the standard soil depth value
-    left_join(fields, by = "id") %>%  # append coordinates
-    select(id, lon, lat, lodep, contains("mean"))  # use mean statistic
+    #left_join(fields, by = "id") %>%  # append coordinates
+    select(id, lodep, contains("mean")) %>%  # use mean statistic
+    mutate_all(as.numeric)
   
   names(horizons) <- gsub(pattern = "mean", replacement = "", x = names(horizons))
   

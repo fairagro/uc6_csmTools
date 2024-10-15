@@ -250,14 +250,14 @@ FILEX_template <- list(
   FIELDS = FIELDS_template,
   SOIL_ANALYSIS = SOIL_ANALYSIS_template,
   INITIAL_CONDITIONS = INITIAL_CONDITIONS_template,
-  PLANTINGS = PLANTING_DETAILS_template,
+  PLANTING_DETAILS = PLANTING_DETAILS_template,
   TILLAGE = TILLAGE_template,
   IRRIGATIONS = IRRIGATION_template,
   FERTILIZERS = FERTILIZERS_template,
   RESIDUES = RESIDUES_template,
   CHEMICALS = CHEMICALS_template,
   ENVIRONMENT_MODIFICATIONS = ENVIRONMENT_MODIFICATIONS_template,
-  HARVESTS = HARVEST_template,
+  HARVEST = HARVEST_template,
   SIMULATION_CONTROLS = SIMULATION_CONTROLS_template
 )
 
@@ -271,8 +271,6 @@ SOIL_template <-
     `SCS FAMILY` = NA_character_, SCOM = NA_character_, SALB = NA_real_, SLU1 = NA_real_, SLDR = NA_real_, SLRO = NA_real_,
     SLNF = NA_real_, SLPF = NA_real_, SMHB = NA_character_, SMPX = NA_character_, SMKE = NA_character_
   )
-
-rename(SOIL_template, `SCS FAMILY` = SCS.FAMILY)
 
 SOIL_template$SLB <- list(NA_real_)
 SOIL_template$SLMH <- list(NA_character_)
@@ -292,6 +290,7 @@ SOIL_template$SLHB <- list(NA_real_)
 SOIL_template$SCEC <- list(NA_real_)
 SOIL_template$SADC <- list(NA_real_)
 
+SOIL_template <- rename(SOIL_template, `SCS FAMILY` = SCS.FAMILY)
 
 
 # WTH file template -------------------------------------------------------
