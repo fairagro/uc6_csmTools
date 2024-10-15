@@ -156,7 +156,6 @@ format_table <- function(df, template) {
   return(as_DSSAT_tbl(out))
 }
 
-
 #' Nest selected columns into single cells
 #' 
 #' This function is necessary to format composite management tables, such as INITIAL_CONDITIONS and IRRIGATION
@@ -198,9 +197,10 @@ collapse_cols <- function(df, cols) {
 # Assemble File X
 build_filex <- function(ls, title = NULL, site_code = NA_character_) {
   
-  # Apply the template format to each section
-  year <- unique(ls[["PLANTING_DETAILS"]]$Year)
+  metadata <- attributes(ls)
   ls <- ls[!grepl("WEATHER|SOIL|OBSERVED", names(ls))]
+  
+  # Apply the template format to each section
   sec_nms <- sort(names(ls))
   filex <- mapply(format_table, ls[sec_nms], FILEX_template[sec_nms], SIMPLIFY = FALSE)
   
@@ -209,9 +209,12 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
     mutate(R = ifelse(is.na(R), 1, R),  # default to 1
            O = ifelse(is.na(O), 0, O),  # default to 0
            C = ifelse(is.na(C), 0, C),  # default to 0
-           SM = ifelse(is.na(SM), 1, SM),  # default to 1
+           SM = ifelse(is.na(SM), 1, SM),  # default to 1  ##REDUNDANT
     ) %>%  
     mutate(across(where(is.numeric), ~ifelse(is.na(.x), 0, .x)))  # exception is simulation controls
+  
+  # Set field ID if missing
+  if (is.na(filex$FIELDS$ID_FIELD)) filex$FIELDS$ID_FIELD <-metadata$field_id
   
   # Check requirements for writing file X
   required_sections <- c("TREATMENTS","CULTIVARS","FIELDS","PLANTING_DETAILS")
@@ -225,7 +228,7 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
         filex[[i]] <- FILEX_template[[i]]
         warning("No Metadata provided with input data. ###")
       } else if (i == "SIMULATION_CONTROLS") {
-        filex[[i]] <- FILEX_template[[i]]
+        filex[[i]] <- as_DSSAT_tbl(FILEX_template[[i]])
         warning("SIMULATION_CONTROLS section not provided with input data. Controls set to default values.")
       } else {
         filex[[i]] <- NULL
@@ -236,13 +239,12 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
   # Set section in the right order
   filex <- filex[match(names(FILEX_template), names(filex))]
   filex <- filex[lengths(filex) > 0]
-
-  # Set atributes for file export
-  attr(filex, "experiment") <- title
-  extension <- paste0(unique(ls[["CULTIVARS"]]$CR), "X")
-  attr(filex, "file_name") <- paste0(site_code, substr(year, nchar(year) - 1, nchar(year)), "01.", extension)
-  attr(filex, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
   
+  # Transfer attributes
+  attr(filex, "experiment") <- metadata$experiment
+  attr(filex, "file_name") <- metadata$file_name
+  attr(filex, "comments") <- list(paste0("File generated on ", Sys.Date(), " with csmTools"), metadata$comments)
+
   return(filex)
 }
 
@@ -263,21 +265,25 @@ build_filex <- function(ls, title = NULL, site_code = NA_character_) {
 
 build_filea <- function(ls, title = NULL, site_code = NA_character_) {
   
-  if ("OBSERVED_Summary" %in% names(ls)) {
+  ls <- template_dssat
+  
+  if ("SUMMARY" %in% names(ls)) {
     
-    year <- unique(ls[["OBSERVED_Summary"]]$Year)
+    #year <- unique(ls[["SUMMARY"]]$Year)
     
-    filea <- ls[["OBSERVED_Summary"]] %>%
-      select(-Year) %>%
+    filea <- ls[["SUMMARY"]] %>%
+      #select(-Year) %>%
       mutate(across(where(is.Date), ~ format(as.Date(.x), "%y%j"))) %>%
       arrange(TRTNO) %>%
+      select(-N) %>%  # temp workaround to delete duplicate TRTNO in map (N in TREATMENTS). Fix by handling mapping by section.
       as_DSSAT_tbl()
 
     # Set atributes for file export
     attr(filea, "v_fmt") <- v_fmt_filea[names(v_fmt_filea) %in% names(filea)]
-    attr(filea, "experiment") <- title
+    attr(filea, "experiment") <- attr(ls, "experiment")
+
     extension <- paste0(unique(ls[["CULTIVARS"]]$CR), "A")
-    attr(filea, "file_name") <- paste0(site_code, substr(year, nchar(year) - 1, nchar(year)), "01.", extension)
+    attr(filea, "file_name") <- sub("(\\.).*", paste0("\\1", extension), attr(ls, "file_name"))
     attr(filea, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
 
   } else {
@@ -289,7 +295,6 @@ build_filea <- function(ls, title = NULL, site_code = NA_character_) {
 }
 
 
-#' Format observed time series data as a DSSAT input table
 #' 
 #' @export
 #' 
@@ -305,21 +310,23 @@ build_filea <- function(ls, title = NULL, site_code = NA_character_) {
 
 build_filet <- function(ls, title = NULL, site_code = NA_character_) {
   
-  if ("OBSERVED_TimeSeries" %in% names(ls)) {
+  if ("TIME_SERIES" %in% names(ls)) {
     
-    year <- unique(ls[["OBSERVED_TimeSeries"]]$Year)
+    #year <- unique(ls[["TIME_SERIES"]]$Year)
     
-    filet <- ls[["OBSERVED_TimeSeries"]] %>%
-      select(-Year) %>%
+    filet <- ls[["TIME_SERIES"]] %>%
+      #select(-Year) %>%
       mutate(DATE = format(as.Date(DATE), "%y%j")) %>%
       arrange(TRTNO, DATE) %>%
+      select(-N) %>%  # temp workaround to delete duplicate TRTNO in map (N in TREATMENTS). Fix by handling mapping by section.
       as_DSSAT_tbl()
     
     # Set atributes for file export
     attr(filet, "v_fmt") <- v_fmt_filet[names(v_fmt_filet) %in% names(filet)]  # print formats
     attr(filet, "experiment") <- title  # file title (1st row)
-    extension <- paste0(unique(ls[["CULTIVARS"]]$CR), "T")  # DSSAT file extension
-    attr(filet, "file_name") <- paste0(site_code, substr(year, nchar(year) - 1, nchar(year)), "01.", extension)
+    
+    extension <- paste0(unique(ls[["CULTIVARS"]]$CR), "T")
+    attr(filea, "file_name") <- sub("(\\.).*", paste0("\\1", extension), attr(ls, "file_name"))
     attr(filet, "comments") <- paste0("File generated on ", Sys.Date(), " with csmTools")
     
   } else {
@@ -344,8 +351,10 @@ build_filet <- function(ls, title = NULL, site_code = NA_character_) {
 
 build_sol <- function(ls) {
   
-  data <- ls[["SOIL_Layers"]]
-  header <- ls[["SOIL_Header"]]
+  attr <- attributes(ls)
+  
+  data <- ls[["SOIL_PROFILE_LAYERS"]]
+  header <- ls[["SOIL_METADATA"]]
   
   header_dups <- header %>%
     slice(1) %>%
@@ -357,11 +366,14 @@ build_sol <- function(ls) {
   # Apply the template format for daily weather data
   sol <- format_table(data, SOIL_template)
   
+  attr(sol, "title") <- attr$title
+  attr(sol, "comments") <- attr$comments
+  attr(sol, "file_name") <- attr$file_name
+  
   return(sol)
 }
 
 
-#' Format observed time series data as a DSSAT input table
 #' 
 #' Currently contains a workaround to correct date formatting issues with the write_wth function that leads to
 #' failed simulation
@@ -393,7 +405,7 @@ build_wth <- function(df) {
   
   # Set metadata as attributes
   attr(wth, "v_fmt") <- wth_fmt  # corrected print formats
-  attr(wth, "GENERAL") <- as_DSSAT_tbl(header[!names(header) == "Year"])
+  attr(wth, "GENERAL") <- attr(df, "station_metadata")
   attr(wth, "location") <- attr$location
   attr(wth, "comments") <- attr$comments
   attr(wth, "file_name") <- attr$filename
